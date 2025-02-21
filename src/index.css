@@ -1,0 +1,9 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary-color: #faebd7; /* Dark Blue */
+  --secondary-color: #e09a33; /* Amber */
+  --tertiary-color: #faebd7; /* Anntique white */
+}
