@@ -58,7 +58,6 @@ const NewUserForm = () => {
         <Grid container spacing={3}>
           <Grid size={{ xs: 12, md: 6 }}>
             <TextField
-              sx={{ "& .MuiInputBase-root": { height: "50px" } }}
               variant="outlined"
               fullWidth
               label="First Name"
@@ -71,7 +70,6 @@ const NewUserForm = () => {
 
           <Grid size={{ xs: 12, md: 6 }}>
             <TextField
-              sx={{ "& .MuiInputBase-root": { height: "50px" } }}
               variant="outlined"
               fullWidth
               label="Last Name"
@@ -84,7 +82,6 @@ const NewUserForm = () => {
 
           <Grid size={{ xs: 12, md: 6 }}>
             <TextField
-              sx={{ "& .MuiInputBase-root": { height: "50px" } }}
               variant="outlined"
               fullWidth
               label="City"
@@ -96,7 +93,6 @@ const NewUserForm = () => {
 
           <Grid size={{ xs: 12, md: 6 }}>
             <TextField
-              sx={{ "& .MuiInputBase-root": { height: "50px" } }}
               variant="outlined"
               fullWidth
               label="State"
@@ -108,7 +104,6 @@ const NewUserForm = () => {
 
           <Grid size={{ xs: 12, md: 6 }}>
             <TextField
-              sx={{ "& .MuiInputBase-root": { height: "50px" } }}
               variant="outlined"
               fullWidth
               label="Phone"
@@ -121,7 +116,6 @@ const NewUserForm = () => {
 
           <Grid size={{ xs: 12, md: 6 }}>
             <TextField
-              sx={{ "& .MuiInputBase-root": { height: "50px" } }}
               variant="outlined"
               fullWidth
               label="Email"
@@ -135,9 +129,8 @@ const NewUserForm = () => {
 
           <Grid size={{ xs: 12, md: 6 }}>
             <FormControl fullWidth>
-              <InputLabel className="-ml-15">Gender</InputLabel>
+              <InputLabel>Gender</InputLabel>
               <Select
-                style={{ height: "50px" }}
                 variant="outlined"
                 name="gender"
                 value={formData.gender}

@@ -6,7 +6,6 @@ import {
   Button,
   Box,
   Typography,
-  Paper,
   CircularProgress,
   Stack,
 } from "@mui/material";
@@ -46,48 +45,59 @@ const Login = ({ setAuthenticated }) => {
 
   return (
     <Box className="flex items-center justify-center min-h-screen">
-      <Paper elevation={3} sx={{ width: "400px" }}>
-        <Stack spacing={1} sx={{ p: 1, m: 1 }}>
-          <Typography variant="h5" className="mb-4 text-center">
-            Login
-          </Typography>
-
-          <TextField
-            label="Username"
-            fullWidth
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            className="mb-4"
-          />
-          <TextField
-            label="Password"
-            type="password"
-            fullWidth
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="mb-4"
-          />
-          <Button
-            type="button"
-            variant="contained"
-            color="primary"
-            fullWidth
-            onClick={async (e) => {
-              e.preventDefault(); // Prevents unintended browser behaviors
-              console.log("Login clicked");
-              await handleLogin(); // Your async function
-            }}
-            disabled={loading}
-          >
-            {loading ? <CircularProgress size={24} color="inherit" /> : "Login"}
-          </Button>
-          {error && (
-            <Typography color="error" className="mb-2">
-              {error}
+      <div>
+        <div className="absolute top-1/3 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96">
+          <Stack spacing={2} sx={{ p: 1, m: 1 }}>
+            <Typography variant="h5" className="mb-6 text-center">
+              Login
             </Typography>
-          )}
-        </Stack>
-      </Paper>
+
+            <TextField
+              label="Username"
+              fullWidth
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="mb-4"
+            />
+            <TextField
+              label="Password"
+              type="password"
+              fullWidth
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="mb-4"
+            />
+            <Button
+              type="button"
+              variant="contained"
+              color="primary"
+              fullWidth
+              onClick={async (e) => {
+                e.preventDefault(); // Prevents unintended browser behaviors
+                console.log("Login clicked");
+                await handleLogin(); // Your async function
+              }}
+              disabled={loading}
+            >
+              {loading ? (
+                <CircularProgress size={24} color="inherit" />
+              ) : (
+                "Login"
+              )}
+            </Button>
+            {error && (
+              <Typography color="error" className="mb-2">
+                {error}
+              </Typography>
+            )}
+          </Stack>
+        </div>
+        <img
+          src="src/assets/login_page_pic.svg"
+          alt="logo"
+          className="w-full"
+        />
+      </div>
     </Box>
   );
 };

@@ -8,6 +8,10 @@ export default {
         secondary: "var(--secondary-color)",
         tertiary: "var(--tertiary-color)",
       },
+      fontFamily: {
+        // This overrides the default sans font
+        sans: ["Roboto", "sans-serif"],
+      },
     },
   },
   plugins: [],
