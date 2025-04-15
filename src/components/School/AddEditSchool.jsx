@@ -10,9 +10,15 @@ import {
   FormControl,
   InputLabel,
 } from "@mui/material";
+import Grid from "@mui/material/Grid";
 import axios from "axios";
+import { useParams } from "react-router-dom";
+import SnackbarUI from "../Utilities/SnackbarUI";
 
-const AddSchoolPage = () => {
+const AddEditSchoolPage = () => {
+  const schoolId = useParams().id || null;
+  const mode = schoolId ? "edit" : "add";
+
   const [schoolData, setSchoolData] = useState({
     name: "",
     long_name: "",
@@ -31,23 +37,36 @@ const AddSchoolPage = () => {
     block_name: "",
     block_id: "",
   });
-
+  const [originalSchoolData, setOriginalSchoolData] = useState({});
   const [states, setStates] = useState([]);
   const [zones, setZones] = useState([]);
   const [districts, setDistricts] = useState([]);
   const [blocks, setBlocks] = useState([]);
   const [organizations, setOrganizations] = useState([]);
 
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success",
+  });
+
   useEffect(() => {
     fetchStates();
     fetchOrgs();
-  }, []);
+    if (mode === "edit" && schoolId) fetchSchoolData();
+  }, [mode, schoolId]);
 
   const fetchStates = async () => {
     try {
       const response = await axios.get("http://localhost:8000/ilp/v1/state");
+      setSnackbar({
+        open: true,
+        message: "fetched states",
+        severity: "failure",
+      });
       setStates(response.data);
     } catch (error) {
+      setSnackbar({ open: true, message: error, severity: "failure" });
       console.error("Error fetching states:", error);
     }
   };
@@ -60,6 +79,21 @@ const AddSchoolPage = () => {
       setOrganizations(response.data);
     } catch (error) {
       console.error("Error fetching organizations:", error);
+    }
+  };
+
+  const fetchSchoolData = async () => {
+    try {
+      const response = await axios.get(
+        `http://localhost:8000/ilp/v1/schoolDetails/${schoolId}`
+      );
+      setSchoolData(response.data);
+      setOriginalSchoolData(response.data);
+      fetchZones(response.data.state_id);
+      fetchDistricts(response.data.zone_id);
+      fetchBlocks(response.data.district_id);
+    } catch (error) {
+      console.error("Error fetching school data:", error);
     }
   };
 
@@ -105,8 +139,33 @@ const AddSchoolPage = () => {
     }
   };
 
+  const resetAllValues = () => {
+    if (mode === "edit") setSchoolData(originalSchoolData);
+    else
+      setSchoolData({
+        name: "",
+        long_name: "",
+        dise_code: 0,
+        organization_name: "",
+        organization_id: "",
+        address: "",
+        city: "",
+        pincode: 0,
+        state_name: "",
+        state_id: "",
+        zone_name: "",
+        zone_id: "",
+        district_name: "",
+        district_id: "",
+        block_name: "",
+        block_id: "",
+      });
+    setZones([]);
+    setDistricts([]);
+    setBlocks([]);
+  };
+
   const convertSchoolData = () => {
-    console.log("schooldata ", schoolData);
     return {
       name: schoolData.name,
       long_name: schoolData.long_name,
@@ -122,7 +181,6 @@ const AddSchoolPage = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    console.log(name, value);
 
     if (name === "organization_id") {
       setSchoolData((prev) => ({
@@ -177,14 +235,23 @@ const AddSchoolPage = () => {
     } else {
       setSchoolData({ ...schoolData, [name]: value });
     }
-    console.log(schoolData);
   };
 
   const handleSubmit = async (e) => {
     const actualSchoolData = convertSchoolData();
     e.preventDefault();
     try {
-      await axios.post("http://localhost:8000/ilp/v1/school", actualSchoolData);
+      if (mode === "add") {
+        await axios.post(
+          "http://localhost:8000/ilp/v1/school",
+          actualSchoolData
+        );
+      } else if (mode === "edit" && schoolId) {
+        await axios.put(
+          `http://localhost:8000/ilp/v1/school/${schoolId}`,
+          actualSchoolData
+        );
+      }
     } catch (error) {
       console.error("Error adding school:", error);
     }
@@ -193,7 +260,7 @@ const AddSchoolPage = () => {
   return (
     <Container maxWidth="md" sx={{ marginTop: 4 }}>
       <Typography variant="h4" gutterBottom>
-        Add New School
+        {mode === "edit" ? "Edit School" : "Add New School"}
       </Typography>
       <Paper sx={{ padding: 4 }}>
         <form onSubmit={handleSubmit}>
@@ -330,18 +397,34 @@ const AddSchoolPage = () => {
               ))}
             </Select>
           </FormControl>
-          <Button
-            type="submit"
-            variant="contained"
-            color="primary"
-            sx={{ mt: 3 }}
-          >
-            Submit
-          </Button>
+          <Grid container spacing={3}>
+            <Grid size={{ xs: 12, md: 6 }}>
+              <Button
+                type="button"
+                variant="contained"
+                color="secondary"
+                onClick={resetAllValues}
+                sx={{ mt: 3, width: "100%", color: "primary.main" }}
+              >
+                Reset
+              </Button>
+            </Grid>
+            <Grid size={{ xs: 12, md: 6 }}>
+              <Button
+                type="submit"
+                variant="contained"
+                color="primary"
+                sx={{ mt: 3, width: "100%", color: "secondary.main" }}
+              >
+                {mode === "edit" ? "Update" : "Submit"}
+              </Button>
+            </Grid>
+          </Grid>
         </form>
       </Paper>
+      {/* {snackbar.open &&  <SnackbarUI snackbar={snackbar} setSnackbar={setSnackbar} />} */}
     </Container>
   );
 };
 
-export default AddSchoolPage;
+export default AddEditSchoolPage;

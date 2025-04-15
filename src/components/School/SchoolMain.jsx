@@ -13,30 +13,51 @@ import {
   Checkbox,
   TablePagination,
   TextField,
-  Box,
+  Card,
   MenuItem,
-  Select,
+  Input,
   Button,
 } from "@mui/material";
 import { Edit, Delete } from "@mui/icons-material";
 import ManageAccountsIcon from "@mui/icons-material/ManageAccounts";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 
 const SchoolMain = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [schools, setSchools] = useState([]);
   const [selected, setSelected] = useState([]);
 
   const [order, setOrder] = useState("desc");
   const [orderBy, setOrderBy] = useState("name");
 
+  const queryParams = new URLSearchParams(location.search);
+
   const [filters, setFilters] = useState({});
-  const [searchField, setSearchField] = useState("name");
-  const [searchValue, setSearchValue] = useState("");
+
+  const [searchField, setSearchField] = useState(
+    queryParams?.get("filterby")
+      ? `${queryParams.get("filterby")}_name`
+      : "name"
+  );
+
+  const [searchValue, setSearchValue] = useState(
+    queryParams?.get("filtervalue") ? queryParams.get("filtervalue") : ""
+  );
 
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+
+  const searchFields = [
+    { label: "School Name", value: "name" },
+    { label: "Dise Code", value: "dise_code" },
+    { label: "Block", value: "block_name" },
+    { label: "District", value: "district_name" },
+    { label: "Zone", value: "zone_name" },
+    { label: "State", value: "state_name" },
+    { label: "Address", value: "address" },
+  ];
 
   useEffect(() => {
     fetchSchools();
@@ -46,7 +67,7 @@ const SchoolMain = () => {
     try {
       const searchFilters = searchValue
         ? {
-            [searchField]: { ilike: searchValue },
+            [searchField]: searchValue,
           }
         : {};
 
@@ -116,84 +137,70 @@ const SchoolMain = () => {
   };
 
   const handleDelete = async (id) => {
-    console.log("Delete school with id:", id);
     setSelected((prev) => prev.filter((selectedId) => selectedId !== id));
     fetchSchools();
   };
 
-  const handleSearchKeyPress = (event) => {
-    if (event.key === "Enter") {
-      setFilters((prevFilters) => ({
-        ...prevFilters,
-        [searchField]: { like: searchValue },
-      }));
+  const handleSearchKeyPress = () => {
+    if (location.search) {
+      navigate(location.pathname, { replace: true });
     }
+    setFilters((prevFilters) => ({
+      ...prevFilters,
+      [searchField]: { like: searchValue },
+    }));
   };
 
   return (
-    <Container maxWidth={false} sx={{ marginTop: 4 }}>
-      <Typography variant="h4" gutterBottom>
-        School Management
-      </Typography>
-      <Box display="flex" justifyContent="flex-end" gap={2} alignItems="center">
-        <Box display="flex">
-          <Select
-            value={searchField}
-            onChange={(e) => setSearchField(e.target.value)}
-            variant="outlined"
-            size="small"
-            sx={{
-              width: "150px",
-              borderRadius: "4px 0 0 4px",
-              "& .MuiOutlinedInput-root": {
-                "&:hover fieldset": {
-                  borderColor: "#0000003b", // Change border color on hover
+    <Paper className="p-6">
+      <Container maxWidth={false} sx={{ marginTop: 4 }}>
+        <Typography variant="h4" gutterBottom>
+          School Management
+        </Typography>
+        <Card className="mb-6 p-4">
+          <div className="flex gap-4 mt-4">
+            <TextField
+              select
+              label="Search By"
+              value={searchField}
+              onChange={(e) => setSearchField(e.target.value)}
+              className="w-1/4"
+              sx={{
+                borderRadius: "4px 0 0 4px",
+                "& .MuiOutlinedInput-root": {
+                  "&:hover fieldset": {
+                    borderColor: "#0000003b",
+                  },
                 },
-              },
-            }}
-          >
-            {[
-              { id: "name", label: "School Name" },
-              { id: "dise_code", label: "Dise Code" },
-              { id: "block_name", label: "Block" },
-              { id: "district_name", label: "District" },
-              { id: "zone_name", label: "Zone" },
-              { id: "state_name", label: "State" },
-              { id: "address", label: "Address" },
-            ].map((option) => (
-              <MenuItem key={option.id} value={option.id}>
-                {option.label}
-              </MenuItem>
-            ))}
-          </Select>
-          <TextField
-            variant="outlined"
-            size="small"
-            placeholder="Search"
-            value={searchValue}
-            onChange={(e) => setSearchValue(e.target.value)}
-            onKeyPress={handleSearchKeyPress}
-            sx={{
-              width: "250px",
-              "& .MuiOutlinedInput-root": {
-                "& fieldset": {
-                  borderRadius: "0 4px 4px 0", // Ensure borderRadius applies to the fieldset
-                },
-                "&:hover fieldset": {
-                  borderColor: "#0000003b", // Change border color on hover
-                },
-              },
-            }}
-          />
-        </Box>
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={() => navigate("/school/add")}
-        >
-          Add New School
-        </Button>
-      </Box>
+              }}
+            >
+              {searchFields.map((field) => (
+                <MenuItem key={field.value} value={field.value}>
+                  {field.label}
+                </MenuItem>
+              ))}
+            </TextField>
+
+            <Input
+              type="text"
+              placeholder="Enter search string"
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+              className="w-1/2"
+            />
+            <Button variant="contained" onClick={handleSearchKeyPress}>
+              Search
+            </Button>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => navigate("/school/add")}
+            >
+              Add New School
+            </Button>
+          </div>
+        </Card>
+      </Container>
       <Paper sx={{ marginTop: 4, padding: 2 }}>
         <Table>
           <TableHead>
@@ -265,7 +272,7 @@ const SchoolMain = () => {
                       <Delete color="primary" />
                     </IconButton>
                     <IconButton
-                      onClick={() => navigate(`/school/${school.id}/manage`)}
+                      onClick={() => navigate(`/school/manage/${school.id}`)}
                     >
                       <ManageAccountsIcon color="primary" />
                     </IconButton>
@@ -285,7 +292,7 @@ const SchoolMain = () => {
           rowsPerPageOptions={[5, 10, 25]}
         />
       </Paper>
-    </Container>
+    </Paper>
   );
 };
 

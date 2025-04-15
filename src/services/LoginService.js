@@ -1,9 +1,9 @@
 import axios from "axios";
 import { getConfig } from "../config";
+import { extractErrorMessage } from "../components/Utilities/UtilFuncs";
 
 export const loginUser = async (email, password) => {
   const config = getConfig();
-  console.log(config, "config ");
   try {
     const response = await axios.post(`${config.API_BASE_URL}/login`, {
       email,
@@ -12,6 +12,8 @@ export const loginUser = async (email, password) => {
     return response.data;
   } catch (error) {
     console.error(error);
-    throw new Error("Login failed. Please try again.");
+    throw new Error(
+      extractErrorMessage(error, "Login failed. Please try again.")
+    );
   }
 };

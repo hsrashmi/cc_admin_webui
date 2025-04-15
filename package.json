@@ -12,13 +12,17 @@
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
-    "@mui/icons-material": "^6.4.5",
-    "@mui/material": "^6.4.5",
+    "@mui/icons-material": "^7.0.1",
+    "@mui/lab": "^7.0.0-beta.10",
+    "@mui/material": "^7.0.1",
     "@mui/styled-engine-sc": "^6.4.3",
-    "axios": "^1.7.9",
+    "@mui/x-tree-view": "^7.28.1",
+    "axios": "^1.8.4",
+    "dayjs": "^1.11.13",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^7.2.0",
+    "recharts": "^2.15.2",
     "styled-components": "^6.1.15"
   },
   "devDependencies": {

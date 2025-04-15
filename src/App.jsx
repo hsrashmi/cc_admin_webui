@@ -1,13 +1,15 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { useState } from "react";
-import AppMenu from "./pages/AppMenu";
-import Login from "./pages/Login";
-import Home from "./components/Home/Home";
-import NewUserForm from "./components/User/NewUser";
+import AppMenu from "./components/Common/AppMenu";
+import Login from "./components/Login/Login";
+import Dashboard from "./components/Home/Home";
+import UserMain from "./components/User/UserMain";
+import AddEditUser from "./components/User/AddEditUser";
 import SchoolMain from "./components/School/SchoolMain";
 import ManageSchool from "./components/School/ManageSchool";
-import AddSchool from "./components/School/AddSchool";
-import PageNotFound from "./pages/PageNotFound";
+import AddEditSchoolPage from "./components/School/AddEditSchool";
+import RegionMain from "./components/Region/RegionMain";
+import PageNotFound from "./components/Common/PageNotFound";
 
 // import School from "./pages/School";
 // import Student from "./pages/Student";
@@ -33,12 +35,16 @@ function App() {
               path="/login"
               element={<Login setAuthenticated={setAuthenticated} />}
             />
-            <Route path="/home" element={<Home />} />
-            <Route path="/user/ilp" element={<NewUserForm />} />
-            <Route path="/school/school" element={<SchoolMain />} />
-            <Route path="/school/add" element={<AddSchool />} />
-            <Route path="/school/:id/manage" element={<ManageSchool />} />
-            <Route path="/" element={<Home />} />
+            <Route path="/home" element={<Dashboard />} />
+            <Route path="/users" element={<UserMain />} />
+            <Route path="/user/add" element={<AddEditUser />} />
+            <Route path="/user/edit/:id" element={<AddEditUser />} />
+            <Route path="/schools" element={<SchoolMain />} />
+            <Route path="/school/add" element={<AddEditSchoolPage />} />
+            <Route path="/school/edit/:id" element={<AddEditSchoolPage />} />
+            <Route path="/school/manage/:id" element={<ManageSchool />} />
+            <Route path="/regions" element={<RegionMain />} />
+            <Route path="/" element={<Dashboard />} />
             <Route path="/*" element={<PageNotFound />} />
             {/* <Route path="/student" element={<Student />} />
             <Route path="/organization" element={<Organization />} /> */}

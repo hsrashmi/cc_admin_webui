@@ -31,7 +31,7 @@ const AddSectionModal = ({
     const fetchTeachers = async () => {
       try {
         const response = await axios.get(
-          "http://localhost:8000/ilp/v1/teachers"
+          `http://localhost:8000/ilp/v1/teacher/${schoolId}`
         );
         setTeachers(response.data);
       } catch (error) {

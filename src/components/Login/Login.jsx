@@ -9,19 +9,24 @@ import {
   CircularProgress,
   Stack,
 } from "@mui/material";
-import { useAuth } from "../services/AuthContext";
-import { loginUser } from "../services/LoginService";
+import { useAuth } from "../../services/AuthContext";
+import { loginUser } from "../../services/LoginService";
+import SnackbarUI from "../Utilities/SnackbarUI";
 
 const Login = ({ setAuthenticated }) => {
   const navigate = useNavigate();
   const { login } = useAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "error",
+  });
 
   const handleLogin = async () => {
-    setError("");
+    setSnackbar({ ...snackbar, open: false });
     setLoading(true);
 
     try {
@@ -32,11 +37,19 @@ const Login = ({ setAuthenticated }) => {
         localStorage.setItem("authenticated", true);
         navigate("/home");
       } else {
-        setError(data.message || "Invalid credentials");
+        setSnackbar({
+          open: true,
+          message: "Invalid credentials",
+          severity: "error",
+        });
       }
     } catch (err) {
       console.log("error ", err);
-      setError(err.message);
+      setSnackbar({
+        open: true,
+        message: err.message || "An error occurred during login",
+        severity: "error",
+      });
     } finally {
       setLoading(false);
     }
@@ -50,44 +63,27 @@ const Login = ({ setAuthenticated }) => {
             <Typography variant="h5" className="mb-6 text-center">
               Login
             </Typography>
-
             <TextField
               label="Username"
-              fullWidth
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="mb-4"
+              fullWidth
             />
             <TextField
               label="Password"
               type="password"
-              fullWidth
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="mb-4"
+              fullWidth
             />
             <Button
-              type="button"
               variant="contained"
-              color="primary"
-              fullWidth
-              onClick={async (e) => {
-                e.preventDefault(); // Prevents unintended browser behaviors
-                await handleLogin(); // Your async function
-              }}
+              onClick={handleLogin}
               disabled={loading}
+              fullWidth
             >
-              {loading ? (
-                <CircularProgress size={24} color="inherit" />
-              ) : (
-                "Login"
-              )}
+              {loading ? <CircularProgress size={24} /> : "Login"}
             </Button>
-            {error && (
-              <Typography color="error" className="mb-2">
-                {error}
-              </Typography>
-            )}
           </Stack>
         </div>
         <img
@@ -96,6 +92,7 @@ const Login = ({ setAuthenticated }) => {
           className="w-full"
         />
       </div>
+      <SnackbarUI snackbar={snackbar} setSnackbar={setSnackbar} />
     </Box>
   );
 };
