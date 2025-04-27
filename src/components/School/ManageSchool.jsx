@@ -6,8 +6,6 @@ import {
   Button,
   Grid,
   Paper,
-  Snackbar,
-  Alert,
   Dialog,
   DialogActions,
   DialogContent,
@@ -15,13 +13,20 @@ import {
   DialogTitle,
 } from "@mui/material";
 
-import axios from "axios";
+import {
+  fetchSchoolClasses,
+  deleteSchoolClass,
+  deleteUserRoleByField,
+} from "../../services/SchoolService";
 import AddEditClassModal from "./AddEditClassModal";
 import ClassCard from "./ClassCard";
+import SnackbarUI from "../Utilities/SnackbarUI";
+import { useNavigate } from "react-router-dom";
 
 const ManageSchool = () => {
-  const { id } = useParams();
-
+  const { schoolname } = useParams();
+  const school = JSON.parse(sessionStorage.getItem("manageSchool"));
+  const navigate = useNavigate();
   const [schoolClasses, setSchoolClasses] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -43,12 +48,9 @@ const ManageSchool = () => {
   };
 
   const fetchClasses = async () => {
-    try {
-      const responseClass = await axios.get(
-        `http://localhost:8000/ilp/v1/schoolClass/${id}`
-      );
-      const dataClass = responseClass.data;
-
+    const response = await fetchSchoolClasses(school.id);
+    if (response.success) {
+      const dataClass = response.data;
       const grouped = {};
       dataClass.forEach((item) => {
         const grade = item.grade;
@@ -73,17 +75,30 @@ const ManageSchool = () => {
       }));
 
       setSchoolClasses(groupedArray);
-      setLoading(false);
-    } catch (error) {
-      setSnackbar({ open: true, message: error, severity: "failure" });
-      console.error("Error fetching school classes:", error);
-      setLoading(false);
+    } else {
+      setSnackbar({
+        open: true,
+        message: response.error,
+        severity: "error",
+      });
     }
+
+    setLoading(false);
   };
 
   useEffect(() => {
+    if (
+      !school ||
+      school.name.toLowerCase().replace(/\s+/g, "-") !== schoolname
+    ) {
+      // fallback: fetch from backend using slug or redirect
+      navigate("/schools");
+    }
+  }, [school]);
+
+  useEffect(() => {
     fetchClasses();
-  }, [id]);
+  }, [school.id]);
 
   const handleAddClass = async (action) => {
     fetchClasses();
@@ -121,27 +136,29 @@ const ManageSchool = () => {
   const confirmDeleteSection = (sectionData) => {
     setDeleteConfirm(true);
     setDataToDelete(sectionData);
-    console.log("**************** ", sectionData);
   };
 
   const handleDeleteSection = async () => {
-    try {
-      await axios.delete(
-        `http://localhost:8000/ilp/v1/schoolClass/${dataToDelete.id}`
+    const deleteClassResponse = await deleteSchoolClass(dataToDelete.id);
+    if (deleteClassResponse.success) {
+      const deleteRoleResponse = await deleteUserRoleByField(
+        "level_id",
+        dataToDelete.id
       );
-      fetchClasses();
-      await axios.delete(`http://localhost:8000/ilp/v1/userRoleByField/`, {
-        params: {
-          field_name: "level_id",
-          field_value: dataToDelete.id,
-        },
+      if (deleteRoleResponse.success) {
+        await fetchClasses();
+        showSnackbar("Section deleted successfully!");
+      } else {
+        showSnackbar(deleteRoleResponse.error, "error");
+      }
+    } else {
+      setSnackbar({
+        open: true,
+        message: deleteClassResponse.error,
+        severity: "error",
       });
-      showSnackbar("Section deleted successfully!");
-    } catch (error) {
-      setSnackbar({ open: true, message: error, severity: "failure" });
-      console.error("Error deleting section:", error);
-      showSnackbar("Failed to delete section.", "error");
     }
+
     setDeleteConfirm(false);
     setDataToDelete({});
   };
@@ -157,8 +174,8 @@ const ManageSchool = () => {
 
   return (
     <Container sx={{ mt: 4 }}>
-      <Typography variant="h4" gutterBottom>
-        Manage School
+      <Typography variant="h5" gutterBottom>
+        Manage School - {school.name}
       </Typography>
       <Button
         variant="contained"
@@ -185,7 +202,7 @@ const ManageSchool = () => {
             <Grid item size={{ xs: 12, md: 12 }} key={cls.grade}>
               <ClassCard
                 classData={cls}
-                schoolId={id}
+                schoolId={school.id}
                 onAddSection={handleAddSection}
                 onEditSection={handleEditSection}
                 onDeleteSection={confirmDeleteSection}
@@ -200,26 +217,10 @@ const ManageSchool = () => {
         open={openAddClassModal}
         onClose={() => setOpenAddClassModal(false)}
         onClassAdded={handleAddClass}
-        schoolId={id}
+        schoolId={school.id}
         initialData={editingSectionData ? editingSectionData : {}}
         existingSectionsByGrade={existingSectionsByGrade}
       />
-
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={4000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-        anchorOrigin={{ vertical: "top", horizontal: "center" }}
-      >
-        <Alert
-          onClose={() => setSnackbar({ ...snackbar, open: false })}
-          severity={snackbar.severity}
-          sx={{ width: "100%" }}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
-
       <Dialog open={deleteConfirm} onClose={() => setDeleteConfirm(false)}>
         <DialogTitle>Confirm Deletion</DialogTitle>
         <DialogContent>
@@ -235,6 +236,7 @@ const ManageSchool = () => {
           </Button>
         </DialogActions>
       </Dialog>
+      <SnackbarUI snackbar={snackbar} setSnackbar={setSnackbar} />
     </Container>
   );
 };

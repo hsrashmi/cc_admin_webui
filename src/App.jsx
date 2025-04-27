@@ -38,11 +38,17 @@ function App() {
             <Route path="/home" element={<Dashboard />} />
             <Route path="/users" element={<UserMain />} />
             <Route path="/user/add" element={<AddEditUser />} />
-            <Route path="/user/edit/:id" element={<AddEditUser />} />
+            <Route path="/user/edit/:username" element={<AddEditUser />} />
             <Route path="/schools" element={<SchoolMain />} />
             <Route path="/school/add" element={<AddEditSchoolPage />} />
-            <Route path="/school/edit/:id" element={<AddEditSchoolPage />} />
-            <Route path="/school/manage/:id" element={<ManageSchool />} />
+            <Route
+              path="/school/edit/:schoolname"
+              element={<AddEditSchoolPage />}
+            />
+            <Route
+              path="/school/manage/:schoolname"
+              element={<ManageSchool />}
+            />
             <Route path="/regions" element={<RegionMain />} />
             <Route path="/" element={<Dashboard />} />
             <Route path="/*" element={<PageNotFound />} />

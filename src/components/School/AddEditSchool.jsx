@@ -11,13 +11,14 @@ import {
   InputLabel,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
-import axios from "axios";
 import { useParams } from "react-router-dom";
 import SnackbarUI from "../Utilities/SnackbarUI";
+import * as SchoolService from "../../services/SchoolService";
 
 const AddEditSchoolPage = () => {
-  const schoolId = useParams().id || null;
-  const mode = schoolId ? "edit" : "add";
+  const { schoolname } = useParams();
+  const school = JSON.parse(sessionStorage.getItem("editSchool"));
+  const mode = schoolname ? "edit" : "add";
 
   const [schoolData, setSchoolData] = useState({
     name: "",
@@ -53,89 +54,64 @@ const AddEditSchoolPage = () => {
   useEffect(() => {
     fetchStates();
     fetchOrgs();
-    if (mode === "edit" && schoolId) fetchSchoolData();
-  }, [mode, schoolId]);
+    if (mode === "edit" && schoolname) fetchSchoolData();
+  }, [mode, schoolname]);
 
   const fetchStates = async () => {
-    try {
-      const response = await axios.get("http://localhost:8000/ilp/v1/state");
-      setSnackbar({
-        open: true,
-        message: "fetched states",
-        severity: "failure",
-      });
+    const response = await SchoolService.fetchStates();
+    if (response.success) {
       setStates(response.data);
-    } catch (error) {
-      setSnackbar({ open: true, message: error, severity: "failure" });
-      console.error("Error fetching states:", error);
+    } else {
+      setSnackbar({ open: true, message: response.error, severity: "error" });
     }
   };
 
   const fetchOrgs = async () => {
-    try {
-      const response = await axios.get(
-        "http://localhost:8000/ilp/v1/organization"
-      );
+    const response = await SchoolService.fetchOrganizations();
+    if (response.success) {
       setOrganizations(response.data);
-    } catch (error) {
-      console.error("Error fetching organizations:", error);
+    } else {
+      setSnackbar({ open: true, message: response.error, severity: "error" });
     }
   };
 
   const fetchSchoolData = async () => {
-    try {
-      const response = await axios.get(
-        `http://localhost:8000/ilp/v1/schoolDetails/${schoolId}`
-      );
+    const response = await SchoolService.fetchSchoolById(school.id);
+    if (response.success) {
       setSchoolData(response.data);
       setOriginalSchoolData(response.data);
       fetchZones(response.data.state_id);
       fetchDistricts(response.data.zone_id);
       fetchBlocks(response.data.district_id);
-    } catch (error) {
-      console.error("Error fetching school data:", error);
+    } else {
+      setSnackbar({ open: true, message: response.error, severity: "error" });
     }
   };
 
   const fetchZones = async (state) => {
-    try {
-      const response = await axios.post(
-        "http://localhost:8000/ilp/v1/getZonesByParams",
-        {
-          filters: { state_id: { "==": state } },
-        }
-      );
+    const response = await SchoolService.fetchZonesByState(state);
+    if (response.success) {
       setZones(response.data);
-    } catch (error) {
-      console.error("Error fetching zones:", error);
+    } else {
+      setSnackbar({ open: true, message: response.error, severity: "error" });
     }
   };
 
   const fetchDistricts = async (zone) => {
-    try {
-      const response = await axios.post(
-        "http://localhost:8000/ilp/v1/getDistrictsByParams",
-        {
-          filters: { zone_id: { "==": zone } },
-        }
-      );
+    const response = await SchoolService.fetchDistrictsByZone(zone);
+    if (response.success) {
       setDistricts(response.data);
-    } catch (error) {
-      console.error("Error fetching districts:", error);
+    } else {
+      setSnackbar({ open: true, message: response.error, severity: "error" });
     }
   };
 
   const fetchBlocks = async (district) => {
-    try {
-      const response = await axios.post(
-        "http://localhost:8000/ilp/v1/getBlocksByParams",
-        {
-          filters: { district_id: { "==": district } },
-        }
-      );
+    const response = await SchoolService.fetchBlocksByDistrict(district);
+    if (response.success) {
       setBlocks(response.data);
-    } catch (error) {
-      console.error("Error fetching blocks:", error);
+    } else {
+      setSnackbar({ open: true, message: response.error, severity: "error" });
     }
   };
 
@@ -238,29 +214,35 @@ const AddEditSchoolPage = () => {
   };
 
   const handleSubmit = async (e) => {
-    const actualSchoolData = convertSchoolData();
     e.preventDefault();
-    try {
-      if (mode === "add") {
-        await axios.post(
-          "http://localhost:8000/ilp/v1/school",
-          actualSchoolData
-        );
-      } else if (mode === "edit" && schoolId) {
-        await axios.put(
-          `http://localhost:8000/ilp/v1/school/${schoolId}`,
-          actualSchoolData
-        );
-      }
-    } catch (error) {
-      console.error("Error adding school:", error);
+    const actualSchoolData = convertSchoolData();
+
+    const response =
+      mode === "add"
+        ? await SchoolService.createSchool(actualSchoolData)
+        : await SchoolService.updateSchool(school.id, actualSchoolData);
+
+    if (response.success) {
+      setSnackbar({
+        open: true,
+        message: `School ${
+          mode === "add" ? "created" : "updated"
+        } successfully`,
+        severity: "success",
+      });
+    } else {
+      setSnackbar({
+        open: true,
+        message: response.error,
+        severity: "error",
+      });
     }
   };
 
   return (
     <Container maxWidth="md" sx={{ marginTop: 4 }}>
-      <Typography variant="h4" gutterBottom>
-        {mode === "edit" ? "Edit School" : "Add New School"}
+      <Typography variant="h5" gutterBottom>
+        {mode === "edit" ? `Edit School - ${school.name}` : "Add New School"}
       </Typography>
       <Paper sx={{ padding: 4 }}>
         <form onSubmit={handleSubmit}>
@@ -338,7 +320,7 @@ const AddEditSchoolPage = () => {
             <InputLabel>State</InputLabel>
             <Select
               name="state_id"
-              value={schoolData.state_name}
+              value={schoolData.state_id}
               onChange={handleChange}
               required
             >
@@ -353,7 +335,7 @@ const AddEditSchoolPage = () => {
             <InputLabel>Zone</InputLabel>
             <Select
               name="zone_id"
-              value={schoolData.zone_name}
+              value={schoolData.zone_id}
               onChange={handleChange}
               required
               disabled={!zones.length}
@@ -369,7 +351,7 @@ const AddEditSchoolPage = () => {
             <InputLabel>District</InputLabel>
             <Select
               name="district_id"
-              value={schoolData.district_name}
+              value={schoolData.district_id}
               onChange={handleChange}
               required
               disabled={!districts.length}
@@ -385,7 +367,7 @@ const AddEditSchoolPage = () => {
             <InputLabel>Block</InputLabel>
             <Select
               name="block_id"
-              value={schoolData.block_name}
+              value={schoolData.block_id}
               onChange={handleChange}
               required
               disabled={!blocks.length}
@@ -422,7 +404,7 @@ const AddEditSchoolPage = () => {
           </Grid>
         </form>
       </Paper>
-      {/* {snackbar.open &&  <SnackbarUI snackbar={snackbar} setSnackbar={setSnackbar} />} */}
+      <SnackbarUI snackbar={snackbar} setSnackbar={setSnackbar} />
     </Container>
   );
 };

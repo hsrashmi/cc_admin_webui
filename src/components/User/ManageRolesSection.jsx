@@ -8,17 +8,25 @@ import {
   Tooltip,
 } from "@mui/material";
 import PropTypes from "prop-types";
-import axios from "axios";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddRoleModal from "./AddRoleModal";
 import { EditOffTwoTone, EditTwoTone } from "@mui/icons-material";
+import {
+  fetchUserRoles,
+  deleteUserRole,
+  createUserRoles,
+} from "../../services/UserService";
+import SnackbarUI from "../Utilities/SnackbarUI";
 
 const ManageRoles = ({ originalRoles, userId }) => {
   const [roles, setRoles] = useState(originalRoles);
   const [isModalOpen, setIsModalOpen] = useState(false);
-
   const [groupedRoles, setGroupedRoles] = useState({});
-
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success",
+  });
   useEffect(() => {
     const groupedData = groupRolesByLevel();
     console.log("groupedData ------- ", groupedData);
@@ -26,13 +34,15 @@ const ManageRoles = ({ originalRoles, userId }) => {
   }, [roles]);
 
   const fetcRoles = async () => {
-    try {
-      const responseUserRoles = await axios.get(
-        `http://localhost:8000/ilp/v1/userRole/${userId}`
-      );
-      setRoles(responseUserRoles.data);
-    } catch (error) {
-      console.error("Error fetching user roles:", error);
+    const response = await fetchUserRoles(userId);
+    if (response.success) {
+      setRoles(response.data);
+    } else {
+      setSnackbar({
+        open: true,
+        message: response.error,
+        severity: "error",
+      });
     }
   };
 
@@ -60,26 +70,16 @@ const ManageRoles = ({ originalRoles, userId }) => {
   }
 
   const handleDelete = async (roleData) => {
-    try {
-      const response = await axios.delete(
-        `http://localhost:8000/ilp/v1/userRole/${roleData.id}`
-      );
+    const response = await deleteUserRole(roleData.id);
+    if (response.success) {
       fetcRoles();
-    } catch (error) {
-      console.error("Error creating role assignments:", error);
     }
   };
 
   const handleAddRole = async (roleData) => {
-    try {
-      const responses = await Promise.all(
-        roleData.map((role) =>
-          axios.post("http://localhost:8000/ilp/v1/userRole", role)
-        )
-      );
+    const response = await createUserRoles(roleData);
+    if (response.success) {
       fetcRoles();
-    } catch (error) {
-      console.error("Error creating role assignments:", error);
     }
   };
 
@@ -95,7 +95,7 @@ const ManageRoles = ({ originalRoles, userId }) => {
           alignItems: "center",
         }}
       >
-        <Typography variant="h6" mb={2}>
+        <Typography variant="h5" mb={2}>
           Manage Roles
         </Typography>
         <Button
@@ -130,7 +130,7 @@ const ManageRoles = ({ originalRoles, userId }) => {
                 }}
               >
                 <Box>
-                  <Typography variant="h6" color="primary" gutterBottom>
+                  <Typography variant="h5" color="primary" gutterBottom>
                     {entity.role_name}
                     {entity.access_type === "READ" ? (
                       <Tooltip title="Read-only access">
@@ -181,6 +181,7 @@ const ManageRoles = ({ originalRoles, userId }) => {
           userId={userId}
         />
       )}
+      <SnackbarUI snackbar={snackbar} setSnackbar={setSnackbar} />
     </Box>
   );
 };

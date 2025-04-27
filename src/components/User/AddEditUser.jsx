@@ -13,24 +13,32 @@ import {
   Stack,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
-import axios from "axios";
 import { useParams } from "react-router-dom";
 import ManageRoles from "./ManageRolesSection";
 import { Close } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
+import {
+  fetchUserById,
+  fetchUserProfilePic,
+  fetchUserRoles,
+  createUser,
+  updateUser,
+  deleteUserProfilePic,
+  fetchGenderOptions,
+} from "../../services/UserService";
+import SnackbarUI from "../Utilities/SnackbarUI";
 
 const AddEditUser = () => {
-  const userId = useParams().id || "";
+  const { username } = useParams() || "";
+  const user = JSON.parse(sessionStorage.getItem("editUser"));
   const navigate = useNavigate();
-
-  const mode = userId ? "edit" : "add";
+  const mode = username ? "edit" : "add";
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
     gender: "",
     email: "",
     username: "",
-    password: "",
     phone1: "",
     phone2: "",
     address: "",
@@ -52,49 +60,76 @@ const AddEditUser = () => {
   const [preview, setPreview] = useState(null);
   const [originalUserRoles, setOriginalUserRoles] = useState([]);
   const fileInputRef = useRef(null);
-
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success",
+  });
+  console.log("snackbar", snackbar);
   useEffect(() => {
     const fetchTypes = async () => {
-      const types = "genderenum";
-      const typesValuesResponse = await axios.get(
-        `http://localhost:8000/ilp/v1/getTypesValues/${types}`
-      );
-      setGenderOptions(typesValuesResponse.data.genderenum);
+      const response = await fetchGenderOptions();
+      if (response.success) {
+        setGenderOptions(response.data.genderenum);
+      } else {
+        setSnackbar({
+          open: true,
+          message: response.error,
+          severity: "error",
+        });
+      }
     };
     fetchTypes();
   }, []);
 
   useEffect(() => {
     const fetchUserData = async () => {
-      const responseUser = await axios.get(
-        `http://localhost:8000/ilp/v1/ilpuser/${userId}`
-      );
-      setOriginalUserData(responseUser.data);
-      setFormData((prevFormData) => {
-        return Object.fromEntries(
-          Object.entries(responseUser.data).filter(
-            ([key]) => key in prevFormData
-          )
-        );
-      });
+      const [userResponse, rolesResponse] = await Promise.all([
+        fetchUserById(user.id),
+        fetchUserRoles(user.id),
+      ]);
 
-      if (responseUser.data.profile_pic_url) {
-        const responseProfilePic = await axios.get(
-          `http://localhost:8000/ilp/v1/${userId}/profile-pic`,
-          { responseType: "blob" }
-        );
-        setPreview(URL.createObjectURL(responseProfilePic.data));
+      if (userResponse.success) {
+        setOriginalUserData(userResponse.data);
+        setFormData((prevFormData) => {
+          return Object.fromEntries(
+            Object.entries(userResponse.data).filter(
+              ([key]) => key in prevFormData
+            )
+          );
+        });
+
+        if (userResponse.data.profile_pic_url) {
+          const profilePicResponse = await fetchUserProfilePic(user.id);
+          if (profilePicResponse.success) {
+            setPreview(URL.createObjectURL(profilePicResponse.data));
+          }
+        }
+      } else {
+        console.log("userResponse.error", userResponse.error);
+        setSnackbar({
+          open: true,
+          message: userResponse.error,
+          severity: "error",
+        });
       }
-      const responseUserRoles = await axios.get(
-        `http://localhost:8000/ilp/v1/userRole/${userId}`
-      );
-      setOriginalUserRoles(responseUserRoles.data);
+
+      if (rolesResponse.success) {
+        setOriginalUserRoles(rolesResponse.data);
+      } else {
+        console.log("rolesResponse.error", rolesResponse.error);
+        setSnackbar({
+          open: true,
+          message: rolesResponse.error,
+          severity: "error",
+        });
+      }
       setLoading(false);
     };
-    if (userId) {
+    if (username) {
       fetchUserData();
     } else setLoading(false);
-  }, [userId]);
+  }, [user, username]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -114,22 +149,27 @@ const AddEditUser = () => {
     e.preventDefault();
     try {
       if (mode === "edit") {
-        await axios.put(
-          `http://localhost:8000/ilp/v1/ilpuser/${userId}`,
-          formData,
-          { headers: { "Content-Type": "multipart/form-data" } }
-        );
-        console.log("User updated successfully!");
+        const response = await updateUser(user.id, formData);
+        if (response.success) {
+          console.log("User updated successfully!");
+        } else {
+          setSnackbar({
+            open: true,
+            message: response.error,
+            severity: "error",
+          });
+        }
       } else {
-        const response = await axios.post(
-          "http://localhost:8000/ilp/v1/ilpuser/",
-          formData
-        );
-        // Extract the user ID from the response data
-        const newUserId = response.data.id;
-
-        // Navigate to the new user's detail page
-        navigate(`/user/edit/${newUserId}`);
+        const response = await createUser(formData);
+        if (response.success) {
+          navigate(`/user/edit/${response.data.id}`);
+        } else {
+          setSnackbar({
+            open: true,
+            message: response.error,
+            severity: "error",
+          });
+        }
       }
     } catch (error) {
       console.error("User update failed:", error);
@@ -137,24 +177,22 @@ const AddEditUser = () => {
   };
 
   const resetAllValues = () => {
-    if (mode === "edit") setFormData(originalUserData);
-    else
-      setFormData({
-        first_name: "",
-        last_name: "",
-        gender: "",
-        email: "",
-        username: "",
-        password: "",
-        phone1: "",
-        phone2: "",
-        address: "",
-        city: "",
-        state: "",
-        country: "",
-        pin_code: "",
-        profile_pic_file: null,
-      });
+    setFormData({
+      first_name: mode === "edit" ? originalUserData.first_name : "",
+      last_name: mode === "edit" ? originalUserData.last_name : "",
+      gender: mode === "edit" ? originalUserData.gender : "",
+      email: mode === "edit" ? originalUserData.email : "",
+      username: mode === "edit" ? originalUserData.username : "",
+      phone1: mode === "edit" ? originalUserData.phone1 : "",
+      phone2: mode === "edit" ? originalUserData.phone2 : "",
+      address: mode === "edit" ? originalUserData.address : "",
+      city: mode === "edit" ? originalUserData.city : "",
+      state: mode === "edit" ? originalUserData.state : "",
+      country: mode === "edit" ? originalUserData.country : "",
+      pin_code: mode === "edit" ? originalUserData.pin_code : "",
+      profile_pic_file:
+        mode === "edit" ? originalUserData.profile_pic_file : null,
+    });
   };
 
   const formatLabel = (field) => {
@@ -164,18 +202,20 @@ const AddEditUser = () => {
   };
 
   const handleDeleteProfilePic = async () => {
-    if (userId) {
-      try {
-        await axios.delete(
-          `http://localhost:8000/ilp/v1/${userId}/profile-pic`
-        );
+    if (username) {
+      const response = await deleteUserProfilePic(user.id);
+      if (response.success) {
         setFormData({ ...formData, profile_pic_file: null });
         setPreview(null);
         if (fileInputRef.current) {
           fileInputRef.current.value = "";
         }
-      } catch (error) {
-        console.error("Error deleting profile picture:", error);
+      } else {
+        setSnackbar({
+          open: true,
+          message: response.error,
+          severity: "error",
+        });
       }
     } else {
       setFormData({ ...formData, profile_pic_file: null });
@@ -188,8 +228,8 @@ const AddEditUser = () => {
 
   return (
     <Container maxWidth="md" sx={{ marginTop: 4 }}>
-      <Typography variant="h4" gutterBottom>
-        {userId ? "Update User" : "Add New User"}
+      <Typography variant="h5" gutterBottom>
+        {username ? `Update User - ${user.name}` : "Add New User"}
       </Typography>
       {!loading ? (
         <Paper sx={{ padding: 4 }}>
@@ -261,7 +301,7 @@ const AddEditUser = () => {
               </Stack>
             </FormControl>
             {mode == "edit" && (
-              <ManageRoles originalRoles={originalUserRoles} userId={userId} />
+              <ManageRoles originalRoles={originalUserRoles} userId={user.id} />
             )}
 
             <Grid container spacing={3}>
@@ -288,6 +328,9 @@ const AddEditUser = () => {
               </Grid>
             </Grid>
           </form>
+          {snackbar.open && (
+            <SnackbarUI snackbar={snackbar} setSnackbar={setSnackbar} />
+          )}
         </Paper>
       ) : (
         <Typography variant="h4" gutterBottom>

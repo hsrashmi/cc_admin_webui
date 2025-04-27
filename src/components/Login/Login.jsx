@@ -10,7 +10,7 @@ import {
   Stack,
 } from "@mui/material";
 import { useAuth } from "../../services/AuthContext";
-import { loginUser } from "../../services/LoginService";
+import { loginUser } from "../../services/UserService";
 import SnackbarUI from "../Utilities/SnackbarUI";
 
 const Login = ({ setAuthenticated }) => {
@@ -30,9 +30,9 @@ const Login = ({ setAuthenticated }) => {
     setLoading(true);
 
     try {
-      const data = await loginUser(username, password);
-      if (data) {
-        login(data);
+      const response = await loginUser(username, password);
+      if (response.success) {
+        login(response.data);
         setAuthenticated(true);
         localStorage.setItem("authenticated", true);
         navigate("/home");

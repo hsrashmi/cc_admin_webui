@@ -1,5 +1,6 @@
 import axios from "axios";
 import { getConfig } from "../config";
+import { extractErrorMessage } from "../components/Utilities/UtilFuncs";
 
 export const fetchRegions = async () => {
   const config = getConfig();
@@ -14,7 +15,11 @@ export const fetchRegions = async () => {
       zones: zonesRes.data.filter((zone) => zone.state_id === state.id),
     }));
   } catch (error) {
-    throw new Error("Failed to fetch regions", error);
+    return {
+      success: false,
+      error: extractErrorMessage(error, "Failed to fetch school details"),
+      details: error.message,
+    };
   }
 };
 
@@ -32,7 +37,11 @@ export const fetchResponsibleUsers = async (level, id) => {
     );
     return response.data;
   } catch (error) {
-    throw new Error("Failed to fetch responsible users", error);
+    return {
+      success: false,
+      error: extractErrorMessage(error, "Failed to fetch school details"),
+      details: error.message,
+    };
   }
 };
 
@@ -42,7 +51,11 @@ export const fetchDistricts = async (zoneId) => {
     const response = await axios.get(`${config.API_BASE_URL}/district/`);
     return response.data.filter((d) => d.zone_id === zoneId);
   } catch (error) {
-    throw new Error("Failed to fetch districts", error);
+    return {
+      success: false,
+      error: extractErrorMessage(error, "Failed to fetch school details"),
+      details: error.message,
+    };
   }
 };
 
@@ -52,7 +65,11 @@ export const fetchBlocks = async (districtId) => {
     const response = await axios.get(`${config.API_BASE_URL}/block/`);
     return response.data.filter((b) => b.district_id === districtId);
   } catch (error) {
-    throw new Error("Failed to fetch blocks", error);
+    return {
+      success: false,
+      error: extractErrorMessage(error, "Failed to fetch school details"),
+      details: error.message,
+    };
   }
 };
 

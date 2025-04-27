@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
 import {
   Dialog,
   DialogTitle,
@@ -14,6 +13,8 @@ import {
   TextField,
 } from "@mui/material";
 import PropTypes from "prop-types";
+import { fetchTeachers, createSection } from "../../services/SchoolService";
+import SnackbarUI from "../Utilities/SnackbarUI";
 
 const AddSectionModal = ({
   open,
@@ -26,19 +27,28 @@ const AddSectionModal = ({
   const [teacher, setTeacher] = useState("");
   const [students, setStudents] = useState("");
   const [teachers, setTeachers] = useState([]);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success",
+  });
 
   useEffect(() => {
-    const fetchTeachers = async () => {
-      try {
-        const response = await axios.get(
-          `http://localhost:8000/ilp/v1/teacher/${schoolId}`
-        );
-        setTeachers(response.data);
-      } catch (error) {
-        console.error("Error fetching teachers:", error);
+    const loadTeachers = async () => {
+      if (open) {
+        const response = await fetchTeachers(schoolId);
+        if (response.success) {
+          setTeachers(response.data);
+        } else {
+          setSnackbar({
+            open: true,
+            message: response.error,
+            severity: "error",
+          });
+        }
       }
     };
-    if (open) fetchTeachers();
+    loadTeachers();
   }, [open]);
 
   // Create an array for A–Z.
@@ -52,77 +62,85 @@ const AddSectionModal = ({
   );
 
   const handleSubmit = async () => {
-    try {
-      await axios.post("http://localhost:8000/ilp/v1/sections", {
-        schoolId,
-        section,
-        teacher,
-        students: Number(students),
-      });
+    const response = await createSection({
+      schoolId,
+      section,
+      teacher,
+      students: Number(students),
+    });
+
+    if (response.success) {
       fetchSections(); // Refresh section list
       onClose(); // Close the modal
       setSection("");
       setTeacher("");
       setStudents("");
-    } catch (error) {
-      console.error("Error adding section:", error);
+    } else {
+      setSnackbar({
+        open: true,
+        message: response.error,
+        severity: "error",
+      });
     }
   };
 
   return (
-    <Dialog open={open} onClose={onClose}>
-      <DialogTitle>Add Section</DialogTitle>
-      <DialogContent>
-        <Box
-          component="form"
-          sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 2 }}
-        >
-          <FormControl fullWidth>
-            <InputLabel id="section-label">Section</InputLabel>
-            <Select
-              labelId="section-label"
-              value={section}
-              label="Section"
-              onChange={(e) => setSection(e.target.value)}
-            >
-              {availableSectionOptions.map((s) => (
-                <MenuItem key={s} value={s}>
-                  {s}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          <FormControl fullWidth>
-            <InputLabel id="teacher-label">Teacher</InputLabel>
-            <Select
-              labelId="teacher-label"
-              value={teacher}
-              label="Teacher"
-              onChange={(e) => setTeacher(e.target.value)}
-            >
-              {teachers.map((t) => (
-                <MenuItem key={t.id} value={t.name}>
-                  {t.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          <TextField
-            label="No. of Students"
-            type="number"
-            value={students}
-            onChange={(e) => setStudents(e.target.value)}
-            fullWidth
-          />
-        </Box>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
-        <Button onClick={handleSubmit} variant="contained" color="primary">
-          Save
-        </Button>
-      </DialogActions>
-    </Dialog>
+    <>
+      <Dialog open={open} onClose={onClose}>
+        <DialogTitle>Add Section</DialogTitle>
+        <DialogContent>
+          <Box
+            component="form"
+            sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 2 }}
+          >
+            <FormControl fullWidth>
+              <InputLabel id="section-label">Section</InputLabel>
+              <Select
+                labelId="section-label"
+                value={section}
+                label="Section"
+                onChange={(e) => setSection(e.target.value)}
+              >
+                {availableSectionOptions.map((s) => (
+                  <MenuItem key={s} value={s}>
+                    {s}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <FormControl fullWidth>
+              <InputLabel id="teacher-label">Teacher</InputLabel>
+              <Select
+                labelId="teacher-label"
+                value={teacher}
+                label="Teacher"
+                onChange={(e) => setTeacher(e.target.value)}
+              >
+                {teachers.map((t) => (
+                  <MenuItem key={t.id} value={t.name}>
+                    {t.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <TextField
+              label="No. of Students"
+              type="number"
+              value={students}
+              onChange={(e) => setStudents(e.target.value)}
+              fullWidth
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={onClose}>Cancel</Button>
+          <Button onClick={handleSubmit} variant="contained" color="primary">
+            Save
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <SnackbarUI snackbar={snackbar} setSnackbar={setSnackbar} />
+    </>
   );
 };
 

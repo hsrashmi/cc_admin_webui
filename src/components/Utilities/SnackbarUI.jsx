@@ -2,6 +2,7 @@ import { Snackbar, Alert } from "@mui/material";
 import PropTypes from "prop-types";
 
 const SnackbarUI = ({ snackbar, setSnackbar }) => {
+  console.log("snackbar", snackbar);
   return (
     <Snackbar
       open={snackbar.open}

@@ -102,7 +102,7 @@ const ManageStudentsModal = ({
           minWidth: 600,
         }}
       >
-        <Typography variant="h6" sx={{ mb: 2 }}>
+        <Typography variant="h5" sx={{ mb: 2 }}>
           Manage Students in Section
         </Typography>
 

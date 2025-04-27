@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 import {
   Box,
   Card,
@@ -22,6 +21,8 @@ import {
   Cell,
 } from "recharts";
 import dayjs from "dayjs";
+import { dashboardSummary } from "../../services/CommonService";
+import SnackbarUI from "../Utilities/SnackbarUI";
 
 const COLORS = [
   "#8884d8",
@@ -36,13 +37,27 @@ const COLORS = [
 const Dashboard = () => {
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success",
+  });
 
   useEffect(() => {
-    axios
-      .get("http://localhost:8000/ilp/v1/dashboard/summary")
-      .then((res) => setSummary(res.data))
-      .catch((err) => console.error("Failed to fetch dashboard data:", err))
-      .finally(() => setLoading(false));
+    const fetchData = async () => {
+      const response = await dashboardSummary();
+      if (response.success) {
+        setSummary(response.data);
+      } else {
+        setSnackbar({
+          open: true,
+          message: response.error,
+          severity: "error",
+        });
+      }
+      setLoading(false);
+    };
+    fetchData();
   }, []);
   if (loading || !summary) {
     return (
@@ -82,7 +97,7 @@ const Dashboard = () => {
         <Grid item size={{ xs: 12, sm: 6, md: 3 }}>
           <Card>
             <CardContent>
-              <Typography variant="h6" gutterBottom>
+              <Typography variant="h5" gutterBottom>
                 Region Distribution
               </Typography>
               <Box
@@ -139,7 +154,7 @@ const Dashboard = () => {
         <Grid item size={{ xs: 12, sm: 6, md: 3 }}>
           <Card sx={{ height: "100%" }}>
             <CardContent>
-              <Typography variant="h6" gutterBottom>
+              <Typography variant="h5" gutterBottom>
                 Role Distribution
               </Typography>
               <ResponsiveContainer width="100%" height={250}>
@@ -171,7 +186,7 @@ const Dashboard = () => {
         <Grid item size={{ xs: 12, md: 6 }}>
           <Card sx={{ height: 350, overflow: "auto" }}>
             <CardContent>
-              <Typography variant="h6" gutterBottom>
+              <Typography variant="h5" gutterBottom>
                 Recently Added Regions
               </Typography>
               {summary.recent_regions.map((region, idx) => (
@@ -198,7 +213,7 @@ const Dashboard = () => {
         <Grid item size={{ xs: 12, md: 6 }}>
           <Card sx={{ height: 350, overflow: "auto" }}>
             <CardContent>
-              <Typography variant="h6" gutterBottom>
+              <Typography variant="h5" gutterBottom>
                 Recently Added Schools
               </Typography>
               {summary.recent_schools.map((school, idx) => (
@@ -218,6 +233,7 @@ const Dashboard = () => {
           </Card>
         </Grid>
       </Grid>
+      <SnackbarUI snackbar={snackbar} setSnackbar={setSnackbar} />
     </Container>
   );
 };

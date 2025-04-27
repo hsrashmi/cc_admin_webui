@@ -1,19 +1,9 @@
-import axios from "axios";
-import { getConfig } from "../config";
-import { extractErrorMessage } from "../components/Utilities/UtilFuncs";
+import { loginUser } from "./UserService";
 
-export const loginUser = async (email, password) => {
-  const config = getConfig();
-  try {
-    const response = await axios.post(`${config.API_BASE_URL}/login`, {
-      email,
-      password,
-    });
+export const login = async (email, password) => {
+  const response = await loginUser(email, password);
+  if (response.success) {
     return response.data;
-  } catch (error) {
-    console.error(error);
-    throw new Error(
-      extractErrorMessage(error, "Login failed. Please try again.")
-    );
   }
+  throw new Error(response.error);
 };

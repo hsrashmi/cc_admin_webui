@@ -21,33 +21,34 @@ import {
 import { Edit, Delete } from "@mui/icons-material";
 import ManageAccountsIcon from "@mui/icons-material/ManageAccounts";
 import { useNavigate, useLocation } from "react-router-dom";
-import axios from "axios";
+import { fetchAllSchoolDetails } from "../../services/SchoolService";
+import SnackbarUI from "../Utilities/SnackbarUI";
+import { createSlug } from "../Utilities/UtilFuncs";
 
 const SchoolMain = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [schools, setSchools] = useState([]);
   const [selected, setSelected] = useState([]);
-
   const [order, setOrder] = useState("desc");
   const [orderBy, setOrderBy] = useState("name");
-
   const queryParams = new URLSearchParams(location.search);
-
   const [filters, setFilters] = useState({});
-
   const [searchField, setSearchField] = useState(
     queryParams?.get("filterby")
       ? `${queryParams.get("filterby")}_name`
       : "name"
   );
-
   const [searchValue, setSearchValue] = useState(
     queryParams?.get("filtervalue") ? queryParams.get("filtervalue") : ""
   );
-
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success",
+  });
 
   const searchFields = [
     { label: "School Name", value: "name" },
@@ -71,17 +72,24 @@ const SchoolMain = () => {
           }
         : {};
 
-      const response = await axios.post(
-        "http://localhost:8000/ilp/v1/allSchoolDetails",
-        {
-          fields: [],
-          filters: searchFilters,
-          page: page + 1,
-          page_size: rowsPerPage,
-          order_by: [order === "desc" ? `-${orderBy}` : orderBy],
-        }
-      );
-      setSchools(response.data);
+      const params = {
+        fields: [],
+        filters: searchFilters,
+        page: page + 1,
+        page_size: rowsPerPage,
+        order_by: [order === "desc" ? `-${orderBy}` : orderBy],
+      };
+
+      const response = await fetchAllSchoolDetails(params);
+      if (response.success) {
+        setSchools(response.data);
+      } else {
+        setSnackbar({
+          open: true,
+          message: response.error,
+          severity: "error",
+        });
+      }
     } catch (error) {
       console.error("Error fetching schools:", error);
     }
@@ -102,7 +110,7 @@ const SchoolMain = () => {
     }
   };
 
-  const handleCheckboxClick = (event, id) => {
+  const handleCheckboxClick = (id) => {
     const selectedIndex = selected.indexOf(id);
     let newSelected = [];
 
@@ -132,8 +140,15 @@ const SchoolMain = () => {
     setPage(0);
   };
 
-  const handleEdit = (id) => {
-    navigate(`/school/edit/${id}`);
+  const handleEdit = (id, name) => {
+    sessionStorage.setItem(
+      "editSchool",
+      JSON.stringify({
+        id,
+        name,
+      })
+    );
+    navigate(`/school/edit/${createSlug(name)}`);
   };
 
   const handleDelete = async (id) => {
@@ -149,6 +164,17 @@ const SchoolMain = () => {
       ...prevFilters,
       [searchField]: { like: searchValue },
     }));
+  };
+
+  const handleManage = (id, name) => {
+    sessionStorage.setItem(
+      "manageSchool",
+      JSON.stringify({
+        id,
+        name,
+      })
+    );
+    navigate(`/school/manage/${createSlug(name)}`);
   };
 
   return (
@@ -248,9 +274,7 @@ const SchoolMain = () => {
                     <Checkbox
                       color="primary"
                       checked={isItemSelected}
-                      onChange={(event) =>
-                        handleCheckboxClick(event, school.id)
-                      }
+                      onChange={() => handleCheckboxClick(school.id)}
                     />
                   </TableCell>
                   {[
@@ -265,14 +289,16 @@ const SchoolMain = () => {
                     <TableCell key={field}>{school[field]}</TableCell>
                   ))}
                   <TableCell align="right">
-                    <IconButton onClick={() => handleEdit(school.id)}>
+                    <IconButton
+                      onClick={() => handleEdit(school.id, school.name)}
+                    >
                       <Edit color="primary" />
                     </IconButton>
                     <IconButton onClick={() => handleDelete(school.id)}>
                       <Delete color="primary" />
                     </IconButton>
                     <IconButton
-                      onClick={() => navigate(`/school/manage/${school.id}`)}
+                      onClick={() => handleManage(school.id, school.name)}
                     >
                       <ManageAccountsIcon color="primary" />
                     </IconButton>
@@ -292,6 +318,7 @@ const SchoolMain = () => {
           rowsPerPageOptions={[5, 10, 25]}
         />
       </Paper>
+      <SnackbarUI snackbar={snackbar} setSnackbar={setSnackbar} />
     </Paper>
   );
 };
