@@ -1,56 +1,46 @@
-import axios from "axios";
+import { getAxiosInstance } from "../components/Utilities/AxiosUtils/AxiosInstance";
+import { apiRequest } from "../components/Utilities/UtilFuncs";
 import { getConfig } from "../config";
-import { extractErrorMessage } from "../components/Utilities/UtilFuncs";
 
-export const fetchTeachers = async (schoolId) => {
-  const config = getConfig();
-  try {
+export const fetchTeachers = (schoolId) => {
+  const axios = getAxiosInstance();
+  return apiRequest(async () => {
     const response = await axios.get(
-      `${config.API_BASE_URL}/teacher/${schoolId}`
+      `${getConfig().API_BASE_URL}/teacher/${schoolId}`
     );
-    return { success: true, data: response.data };
-  } catch (error) {
-    return {
-      success: false,
-      error: extractErrorMessage(error, "Failed to fetch teachers"),
-      details: error.message,
-    };
-  }
+    return response.data;
+  }, "Failed to fetch teachers");
 };
 
-export const updateClass = async (classData) => {
-  const config = getConfig();
-  try {
-    let classId = classData.id;
-    await axios.put(`${config.API_BASE_URL}/schoolClass/${classId}`, {
+export const updateClass = (classData) => {
+  const axios = getAxiosInstance();
+  return apiRequest(async () => {
+    const classId = classData.id;
+    await axios.put(`${getConfig().API_BASE_URL}/schoolClass/${classId}`, {
       id: classData.id,
       school_id: classData.schoolId,
       grade: classData.grade,
       section: classData.section,
     });
     await axios.put(
-      `${config.API_BASE_URL}/assignTeacherToClass/${classData.teacher_assignment_id}`,
+      `${getConfig().API_BASE_URL}/assignTeacherToClass/${
+        classData.teacher_assignment_id
+      }`,
       {
         id: classData.teacher_assignment_id,
         class_id: classId,
         user_id: classData.teacher,
       }
     );
-    return { success: true, data: { type: "edit" } };
-  } catch (error) {
-    return {
-      success: false,
-      error: extractErrorMessage(error, "Failed to save class"),
-      details: error.message,
-    };
-  }
+    return { type: "edit" };
+  }, "Failed to save class");
 };
 
-export const saveClass = async (classData) => {
-  const config = getConfig();
-  try {
+export const saveClass = (classData) => {
+  const axios = getAxiosInstance();
+  return apiRequest(async () => {
     const responseClass = await axios.post(
-      `${config.API_BASE_URL}/schoolClass`,
+      `${getConfig().API_BASE_URL}/schoolClass`,
       {
         school_id: classData.schoolId,
         grade: classData.grade,
@@ -58,321 +48,213 @@ export const saveClass = async (classData) => {
       }
     );
     const classId = responseClass.data.id;
-    await axios.post(`${config.API_BASE_URL}/assignTeacherToClass`, {
+    await axios.post(`${getConfig().API_BASE_URL}/assignTeacherToClass`, {
       class_id: classId,
       user_id: classData.teacher,
     });
-    return { success: true, data: { type: "add" } };
-  } catch (error) {
-    return {
-      success: false,
-      error: extractErrorMessage(error, "Failed to save class"),
-      details: error.message,
-    };
-  }
+    return { type: "add" };
+  }, "Failed to save class");
 };
 
-export const fetchClassStudents = async (sectionId) => {
-  const config = getConfig();
-  try {
+export const fetchClassStudents = (sectionId) => {
+  const axios = getAxiosInstance();
+  return apiRequest(async () => {
     const response = await axios.get(
-      `${config.API_BASE_URL}/schoolClassStudents/${sectionId}`
+      `${getConfig().API_BASE_URL}/schoolClassStudents/${sectionId}`
     );
-    return { success: true, data: response.data || [] };
-  } catch (error) {
-    return {
-      success: false,
-      error: extractErrorMessage(error, "Failed to fetch class students"),
-      details: error.message,
-    };
-  }
+    return response.data || [];
+  }, "Failed to fetch class students");
 };
 
-export const fetchUnassignedStudents = async (schoolId) => {
-  const config = getConfig();
-  try {
+export const fetchUnassignedStudents = (schoolId) => {
+  const axios = getAxiosInstance();
+  return apiRequest(async () => {
     const response = await axios.get(
-      `${config.API_BASE_URL}/unassignedSchoolStudents/${schoolId}`
+      `${getConfig().API_BASE_URL}/unassignedSchoolStudents/${schoolId}`
     );
-    return { success: true, data: response.data || [] };
-  } catch (error) {
-    return {
-      success: false,
-      error: extractErrorMessage(error, "Failed to fetch unassigned students"),
-      details: error.message,
-    };
-  }
+    return response.data || [];
+  }, "Failed to fetch unassigned students");
 };
 
-export const updateSchoolStudents = async (schoolId, studentIds) => {
-  const config = getConfig();
-  try {
+export const updateSchoolStudents = (schoolId, studentIds) => {
+  const axios = getAxiosInstance();
+  return apiRequest(async () => {
     const response = await axios.put(
-      `${config.API_BASE_URL}/unassignedSchoolStudents/${schoolId}`,
-      { student_ids: studentIds }
+      `${getConfig().API_BASE_URL}/unassignedSchoolStudents/${schoolId}`,
+      {
+        student_ids: studentIds,
+      }
     );
-    return { success: true, data: response.data || [] };
-  } catch (error) {
-    return {
-      success: false,
-      error: extractErrorMessage(error, "Failed to update school students"),
-      details: error.message,
-    };
-  }
+    return response.data || [];
+  }, "Failed to update school students");
 };
 
-export const updateClassStudents = async (sectionId, studentIds) => {
-  const config = getConfig();
-  try {
+export const updateClassStudents = (sectionId, studentIds) => {
+  const axios = getAxiosInstance();
+  return apiRequest(async () => {
     const response = await axios.put(
-      `${config.API_BASE_URL}/schoolClassStudents/${sectionId}`,
-      { student_ids: studentIds }
+      `${getConfig().API_BASE_URL}/schoolClassStudents/${sectionId}`,
+      {
+        student_ids: studentIds,
+      }
     );
-    return { success: true, data: response.data || [] };
-  } catch (error) {
-    return {
-      success: false,
-      error: extractErrorMessage(error, "Failed to update class students"),
-      details: error.message,
-    };
-  }
+    return response.data || [];
+  }, "Failed to update class students");
 };
 
-export const fetchStates = async () => {
-  const config = getConfig();
-  try {
-    const response = await axios.get(`${config.API_BASE_URL}/state`);
-    return { success: true, data: response.data };
-  } catch (error) {
-    return {
-      success: false,
-      error: extractErrorMessage(error, "Failed to fetch states"),
-      details: error.message,
-    };
-  }
+export const fetchStates = () => {
+  const axios = getAxiosInstance();
+  return apiRequest(async () => {
+    const response = await axios.get(`${getConfig().API_BASE_URL}/state`);
+    return response.data;
+  }, "Failed to fetch states");
 };
 
-export const fetchOrganizations = async () => {
-  const config = getConfig();
-  try {
-    const response = await axios.get(`${config.API_BASE_URL}/organization`);
-    return { success: true, data: response.data };
-  } catch (error) {
-    return {
-      success: false,
-      error: extractErrorMessage(error, "Failed to fetch organizations"),
-      details: error.message,
-    };
-  }
-};
-
-export const fetchSchoolById = async (schoolId) => {
-  const config = getConfig();
-  try {
+export const fetchOrganizations = () => {
+  const axios = getAxiosInstance();
+  return apiRequest(async () => {
     const response = await axios.get(
-      `${config.API_BASE_URL}/schoolDetails/${schoolId}`
+      `${getConfig().API_BASE_URL}/organization`
     );
-    return { success: true, data: response.data };
-  } catch (error) {
-    return {
-      success: false,
-      error: extractErrorMessage(error, "Failed to fetch school details"),
-      details: error.message,
-    };
-  }
+    return response.data;
+  }, "Failed to fetch organizations");
 };
 
-export const fetchZonesByState = async (stateId) => {
-  const config = getConfig();
-  try {
+export const fetchSchoolById = (schoolId) => {
+  const axios = getAxiosInstance();
+  return apiRequest(async () => {
+    const response = await axios.get(
+      `${getConfig().API_BASE_URL}/schoolDetails/${schoolId}`
+    );
+    return response.data;
+  }, "Failed to fetch school details");
+};
+
+export const fetchZonesByState = (stateId) => {
+  const axios = getAxiosInstance();
+  return apiRequest(async () => {
     const response = await axios.post(
-      `${config.API_BASE_URL}/getZonesByParams`,
+      `${getConfig().API_BASE_URL}/getZonesByParams`,
       {
         filters: { state_id: { "==": stateId } },
       }
     );
-    return { success: true, data: response.data };
-  } catch (error) {
-    return {
-      success: false,
-      error: extractErrorMessage(error, "Failed to fetch zones"),
-      details: error.message,
-    };
-  }
+    return response.data;
+  }, "Failed to fetch zones");
 };
 
-export const fetchDistrictsByZone = async (zoneId) => {
-  const config = getConfig();
-  try {
+export const fetchDistrictsByZone = (zoneId) => {
+  const axios = getAxiosInstance();
+  return apiRequest(async () => {
     const response = await axios.post(
-      `${config.API_BASE_URL}/getDistrictsByParams`,
+      `${getConfig().API_BASE_URL}/getDistrictsByParams`,
       {
         filters: { zone_id: { "==": zoneId } },
       }
     );
-    return { success: true, data: response.data };
-  } catch (error) {
-    return {
-      success: false,
-      error: extractErrorMessage(error, "Failed to fetch districts"),
-      details: error.message,
-    };
-  }
+    return response.data;
+  }, "Failed to fetch districts");
 };
 
-export const fetchBlocksByDistrict = async (districtId) => {
-  const config = getConfig();
-  try {
+export const fetchBlocksByDistrict = (districtId) => {
+  const axios = getAxiosInstance();
+  return apiRequest(async () => {
     const response = await axios.post(
-      `${config.API_BASE_URL}/getBlocksByParams`,
+      `${getConfig().API_BASE_URL}/getBlocksByParams`,
       {
         filters: { district_id: { "==": districtId } },
       }
     );
-    return { success: true, data: response.data };
-  } catch (error) {
-    return {
-      success: false,
-      error: extractErrorMessage(error, "Failed to fetch blocks"),
-      details: error.message,
-    };
-  }
+    return response.data;
+  }, "Failed to fetch blocks");
 };
 
-export const fetchSchoolsByBlock = async (blockId) => {
-  const config = getConfig();
-  try {
+export const fetchSchoolsByBlock = (blockId) => {
+  const axios = getAxiosInstance();
+  return apiRequest(async () => {
     const response = await axios.post(
-      `${config.API_BASE_URL}/getSchoolsByParams`,
+      `${getConfig().API_BASE_URL}/getSchoolsByParams`,
       {
         filters: { block_id: { "==": blockId } },
       }
     );
-    return { success: true, data: response.data };
-  } catch (error) {
-    return {
-      success: false,
-      error: extractErrorMessage(error, "Failed to fetch schools"),
-      details: error.message,
-    };
-  }
+    return response.data;
+  }, "Failed to fetch schools");
 };
 
-export const createSchool = async (schoolData) => {
-  const config = getConfig();
-  try {
+export const createSchool = (schoolData) => {
+  const axios = getAxiosInstance();
+  return apiRequest(async () => {
     const response = await axios.post(
-      `${config.API_BASE_URL}/school`,
+      `${getConfig().API_BASE_URL}/school`,
       schoolData
     );
-    return { success: true, data: response.data };
-  } catch (error) {
-    return {
-      success: false,
-      error: extractErrorMessage(error, "Failed to create school"),
-      details: error.message,
-    };
-  }
+    return response.data;
+  }, "Failed to create school");
 };
 
-export const updateSchool = async (schoolId, schoolData) => {
-  const config = getConfig();
-  try {
+export const updateSchool = (schoolId, schoolData) => {
+  const axios = getAxiosInstance();
+  return apiRequest(async () => {
     const response = await axios.put(
-      `${config.API_BASE_URL}/school/${schoolId}`,
+      `${getConfig().API_BASE_URL}/school/${schoolId}`,
       schoolData
     );
-    return { success: true, data: response.data };
-  } catch (error) {
-    return {
-      success: false,
-      error: extractErrorMessage(error, "Failed to update school"),
-      details: error.message,
-    };
-  }
+    return response.data;
+  }, "Failed to update school");
 };
 
-export const createSection = async (sectionData) => {
-  const config = getConfig();
-  try {
-    const response = await axios.post(`${config.API_BASE_URL}/sections`, {
+export const createSection = (sectionData) => {
+  const axios = getAxiosInstance();
+  return apiRequest(async () => {
+    const response = await axios.post(`${getConfig().API_BASE_URL}/sections`, {
       schoolId: sectionData.schoolId,
       section: sectionData.section,
       teacher: sectionData.teacher,
       students: sectionData.students,
     });
-    return { success: true, data: response.data };
-  } catch (error) {
-    return {
-      success: false,
-      error: extractErrorMessage(error, "Failed to create section"),
-      details: error.message,
-    };
-  }
+    return response.data;
+  }, "Failed to create section");
 };
 
-export const fetchSchoolClasses = async (schoolId) => {
-  const config = getConfig();
-  try {
+export const fetchSchoolClasses = (schoolId) => {
+  const axios = getAxiosInstance();
+  return apiRequest(async () => {
     const response = await axios.get(
-      `${config.API_BASE_URL}/schoolClass/${schoolId}`
+      `${getConfig().API_BASE_URL}/schoolClass/${schoolId}`
     );
-    return { success: true, data: response.data };
-  } catch (error) {
-    return {
-      success: false,
-      error: extractErrorMessage(error, "Failed to fetch school classes"),
-      details: error.message,
-    };
-  }
+    return response.data;
+  }, "Failed to fetch school classes");
 };
 
-export const deleteSchoolClass = async (classId) => {
-  const config = getConfig();
-  try {
-    await axios.delete(`${config.API_BASE_URL}/schoolClass/${classId}`);
-    return { success: true };
-  } catch (error) {
-    return {
-      success: false,
-      error: extractErrorMessage(error, "Failed to delete class"),
-      details: error.message,
-    };
-  }
+export const deleteSchoolClass = (classId) => {
+  const axios = getAxiosInstance();
+  return apiRequest(async () => {
+    await axios.delete(`${getConfig().API_BASE_URL}/schoolClass/${classId}`);
+    return null;
+  }, "Failed to delete class");
 };
 
-export const deleteUserRoleByField = async (fieldName, fieldValue) => {
-  const config = getConfig();
-  try {
-    await axios.delete(`${config.API_BASE_URL}/userRoleByField/`, {
+export const deleteUserRoleByField = (fieldName, fieldValue) => {
+  const axios = getAxiosInstance();
+  return apiRequest(async () => {
+    await axios.delete(`${getConfig().API_BASE_URL}/userRoleByField/`, {
       params: {
         field_name: fieldName,
         field_value: fieldValue,
       },
     });
-    return { success: true };
-  } catch (error) {
-    return {
-      success: false,
-      error: extractErrorMessage(error, "Failed to delete user role"),
-      details: error.message,
-    };
-  }
+    return null;
+  }, "Failed to delete user role");
 };
 
-export const fetchAllSchoolDetails = async (params) => {
-  const config = getConfig();
-  try {
+export const fetchAllSchoolDetails = (params) => {
+  const axios = getAxiosInstance();
+  return apiRequest(async () => {
     const response = await axios.post(
-      `${config.API_BASE_URL}/allSchoolDetails`,
+      `${getConfig().API_BASE_URL}/allSchoolDetails`,
       params
     );
-    return { success: true, data: response.data };
-  } catch (error) {
-    return {
-      success: false,
-      error: extractErrorMessage(error, "Failed to fetch school details"),
-      details: error.message,
-    };
-  }
+    return response.data;
+  }, "Failed to fetch school details");
 };

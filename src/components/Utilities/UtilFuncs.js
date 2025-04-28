@@ -52,12 +52,19 @@ export const extractErrorMessage = (
 
 export const createSlug = (name) => name.toLowerCase().replace(/\s+/g, "-");
 
-export async function apiWrapper(apiCall) {
+export const apiRequest = async (
+  apiCall,
+  fallbackErrorMessage = "Request failed"
+) => {
   try {
     const data = await apiCall();
-    return { success: true, data, error: null };
+    console.log("API Request Data:", data); // Log the data for debugging
+    return { success: true, data };
   } catch (error) {
-    console.error("API Error:", error);
-    return { success: false, data: null, error };
+    return {
+      success: false,
+      error: extractErrorMessage(error, fallbackErrorMessage),
+      details: error.message,
+    };
   }
-}
+};

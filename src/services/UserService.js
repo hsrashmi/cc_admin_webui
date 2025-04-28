@@ -1,289 +1,156 @@
-import axios from "axios";
-import { getConfig } from "../config";
-import { extractErrorMessage } from "../components/Utilities/UtilFuncs";
+import { getAxiosInstance } from "../components/Utilities/AxiosUtils/AxiosInstance";
+import { apiRequest } from "../components/Utilities/UtilFuncs";
 
 export const loginUser = async (email, password) => {
-  const config = getConfig();
-  try {
-    const response = await axios.post(`${config.API_BASE_URL}/login`, {
+  const axios = getAxiosInstance();
+  return apiRequest(async () => {
+    const response = await axios.post(`/login`, {
       email,
       password,
     });
-    return { success: true, data: response.data };
-  } catch (error) {
-    return {
-      success: false,
-      error: extractErrorMessage(error, "Login failed. Please try again."),
-      details: error.message,
-    };
-  }
+    return response.data;
+  }, "Login failed. Please try again.");
 };
 
 export const fetchAllUsersDetails = async (params) => {
-  const config = getConfig();
-  try {
-    const response = await axios.post(
-      `${config.API_BASE_URL}/allIlpusersWithRoles`,
-      params
-    );
-    return { success: true, data: response.data };
-  } catch (error) {
-    return {
-      success: false,
-      error: extractErrorMessage(error, "Failed to fetch users details"),
-      details: error.message,
-    };
-  }
+  const axios = getAxiosInstance();
+  return apiRequest(async () => {
+    const response = await axios.post(`/allIlpusersWithRoles`, params);
+    return response.data;
+  }, "Failed to fetch users details");
 };
 
 export const fetchAllUsersDetailsCount = async (params) => {
-  const config = getConfig();
-  try {
-    const response = await axios.post(
-      `${config.API_BASE_URL}/allIlpusersWithRolesCount`,
-      params
-    );
-    return { success: true, data: response.data };
-  } catch (error) {
-    return {
-      success: false,
-      error: extractErrorMessage(error, "Failed to fetch users count details"),
-      details: error.message,
-    };
-  }
+  const axios = getAxiosInstance();
+  return apiRequest(async () => {
+    const response = await axios.post(`/allIlpusersWithRolesCount`, params);
+    return response.data;
+  }, "Failed to fetch users count details");
 };
 
 export const fetchUserById = async (userId) => {
-  const config = getConfig();
-  try {
-    const response = await axios.get(
-      `${config.API_BASE_URL}/ilpuser/${userId}`
-    );
-    return { success: true, data: response.data };
-  } catch (error) {
-    return {
-      success: false,
-      error: extractErrorMessage(error, "Failed to fetch user details"),
-      details: error.message,
-    };
-  }
+  const axios = getAxiosInstance();
+  return apiRequest(async () => {
+    const response = await axios.get(`/ilpuser/${userId}`);
+    return response.data;
+  }, "Failed to fetch user details");
 };
 
 export const fetchUserProfilePic = async (userId) => {
-  const config = getConfig();
-  try {
-    const response = await axios.get(
-      `${config.API_BASE_URL}/${userId}/profile-pic`,
-      { responseType: "blob" }
-    );
-    return { success: true, data: response.data };
-  } catch (error) {
-    return {
-      success: false,
-      error: extractErrorMessage(error, "Failed to fetch profile picture"),
-      details: error.message,
-    };
-  }
+  const axios = getAxiosInstance();
+  return apiRequest(async () => {
+    const response = await axios.get(`/${userId}/profile-pic`, {
+      responseType: "blob",
+    });
+    return response.data;
+  }, "Failed to fetch profile picture");
 };
 
 export const fetchUserRoles = async (userId) => {
-  const config = getConfig();
-  try {
-    const response = await axios.get(
-      `${config.API_BASE_URL}/userRole/${userId}`
-    );
-    return { success: true, data: response.data };
-  } catch (error) {
-    return {
-      success: false,
-      error: extractErrorMessage(error, "Failed to fetch user roles"),
-      details: error.message,
-    };
-  }
+  const axios = getAxiosInstance();
+  return apiRequest(async () => {
+    const response = await axios.get(`/userRole/${userId}`);
+    return response.data;
+  }, "Failed to fetch user roles");
 };
 
 export const createUser = async (userData) => {
-  const config = getConfig();
-  try {
-    const response = await axios.post(
-      `${config.API_BASE_URL}/ilpuser/`,
-      userData
-    );
-    return { success: true, data: response.data };
-  } catch (error) {
-    return {
-      success: false,
-      error: extractErrorMessage(error, "Failed to create user"),
-      details: error.message,
-    };
-  }
+  const axios = getAxiosInstance();
+  return apiRequest(async () => {
+    const response = await axios.post(`/ilpuser/`, userData);
+    return response.data;
+  }, "Failed to create user");
 };
 
 export const updateUser = async (userId, userData) => {
-  const config = getConfig();
-  try {
-    const response = await axios.put(
-      `${config.API_BASE_URL}/ilpuser/${userId}`,
-      userData,
-      { headers: { "Content-Type": "multipart/form-data" } }
-    );
-    return { success: true, data: response.data };
-  } catch (error) {
-    return {
-      success: false,
-      error: extractErrorMessage(error, "Failed to update user"),
-      details: error.message,
-    };
-  }
+  const axios = getAxiosInstance();
+  return apiRequest(async () => {
+    const response = await axios.put(`/ilpuser/${userId}`, userData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return response.data;
+  }, "Failed to update user");
 };
 
 export const deleteUserProfilePic = async (userId) => {
-  const config = getConfig();
-  try {
-    await axios.delete(`${config.API_BASE_URL}/${userId}/profile-pic`);
-    return { success: true };
-  } catch (error) {
-    return {
-      success: false,
-      error: extractErrorMessage(error, "Failed to delete profile picture"),
-      details: error.message,
-    };
-  }
+  const axios = getAxiosInstance();
+  return apiRequest(async () => {
+    await axios.delete(`/${userId}/profile-pic`);
+    return true;
+  }, "Failed to delete profile picture");
 };
 
 export const deleteUserRole = async (roleId) => {
-  const config = getConfig();
-  try {
-    await axios.delete(`${config.API_BASE_URL}/userRole/${roleId}`);
-    return { success: true };
-  } catch (error) {
-    return {
-      success: false,
-      error: extractErrorMessage(error, "Failed to delete user role"),
-      details: error.message,
-    };
-  }
+  const axios = getAxiosInstance();
+  return apiRequest(async () => {
+    await axios.delete(`/userRole/${roleId}`);
+    return true;
+  }, "Failed to delete user role");
 };
 
 export const createUserRoles = async (rolesData) => {
-  const config = getConfig();
-  try {
+  const axios = getAxiosInstance();
+  return apiRequest(async () => {
     const responses = await Promise.all(
-      rolesData.map((role) =>
-        axios.post(`${config.API_BASE_URL}/userRole`, role)
-      )
+      rolesData.map((role) => axios.post(`/userRole`, role))
     );
-    return { success: true, data: responses.map((r) => r.data) };
-  } catch (error) {
-    return {
-      success: false,
-      error: extractErrorMessage(error, "Failed to create user roles"),
-      details: error.message,
-    };
-  }
+    return responses.map((r) => r.data);
+  }, "Failed to create user roles");
 };
 
 export const fetchResponsibleUsers = async (level, id) => {
-  const config = getConfig();
-  try {
-    const response = await axios.get(
-      `${config.API_BASE_URL}/userRolesByHeirarchy/`,
-      {
-        params: {
-          level_name: level.toUpperCase(),
-          level_id: id,
-        },
-      }
-    );
-    return { success: true, data: response.data };
-  } catch (error) {
-    return {
-      success: false,
-      error: extractErrorMessage(error, "Failed to fetch responsible users"),
-      details: error.message,
-    };
-  }
+  const axios = getAxiosInstance();
+  return apiRequest(async () => {
+    const response = await axios.get(`/userRolesByHeirarchy/`, {
+      params: {
+        level_name: level.toUpperCase(),
+        level_id: id,
+      },
+    });
+    return response.data;
+  }, "Failed to fetch responsible users");
 };
 
 export const fetchAllRoles = async () => {
-  const config = getConfig();
-  try {
-    const response = await axios.get(`${config.API_BASE_URL}/role/`);
-    return { success: true, data: response.data };
-  } catch (error) {
-    return {
-      success: false,
-      error: extractErrorMessage(error, "Failed to fetch role names"),
-      details: error.message,
-    };
-  }
+  const axios = getAxiosInstance();
+  return apiRequest(async () => {
+    const response = await axios.get(`/role/`);
+    return response.data;
+  }, "Failed to fetch role names");
 };
 
 export const fetchAllStates = async () => {
-  const config = getConfig();
-  try {
-    const response = await axios.get(`${config.API_BASE_URL}/state/`);
-    return { success: true, data: response.data };
-  } catch (error) {
-    return {
-      success: false,
-      error: extractErrorMessage(error, "Failed to fetch state names"),
-      details: error.message,
-    };
-  }
+  const axios = getAxiosInstance();
+  return apiRequest(async () => {
+    const response = await axios.get(`/state/`);
+    return response.data;
+  }, "Failed to fetch state names");
 };
 
 export const fetchGenderOptions = async () => {
-  const config = getConfig();
-  try {
-    const response = await axios.get(
-      `${config.API_BASE_URL}/getTypesValues/genderenum`
-    );
-    return { success: true, data: response.data };
-  } catch (error) {
-    return {
-      success: false,
-      error: extractErrorMessage(error, "Failed to fetch gender options"),
-      details: error.message,
-    };
-  }
+  const axios = getAxiosInstance();
+  return apiRequest(async () => {
+    const response = await axios.get(`/getTypesValues/genderenum`);
+    return response.data;
+  }, "Failed to fetch gender options");
 };
 
 export const fetchAccessTypeOptions = async () => {
-  const config = getConfig();
-  try {
-    const response = await axios.get(
-      `${config.API_BASE_URL}/getTypesValues/accesstypeenum`
-    );
-    return { success: true, data: response.data };
-  } catch (error) {
-    return {
-      success: false,
-      error: extractErrorMessage(error, "Failed to fetch gender options"),
-      details: error.message,
-    };
-  }
+  const axios = getAxiosInstance();
+  return apiRequest(async () => {
+    const response = await axios.get(`/getTypesValues/accesstypeenum`);
+    return response.data;
+  }, "Failed to fetch access type options");
 };
 
 export const bulkUploadUserData = async (file) => {
-  const config = getConfig();
-  try {
-    const response = await axios.post(
-      `${config.API_BASE_URL}/bulkUploadUserData`,
-      file,
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      }
-    );
-    return { success: true, data: response.data };
-  } catch (error) {
-    console.log("error ", error);
-    return {
-      success: false,
-      error: extractErrorMessage(error, "Failed to upload data"),
-      details: error.message,
-    };
-  }
+  const axios = getAxiosInstance();
+  return apiRequest(async () => {
+    const response = await axios.post(`/bulkUploadUserData`, file, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response.data;
+  }, "Failed to upload data");
 };

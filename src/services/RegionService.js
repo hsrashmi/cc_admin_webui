@@ -1,102 +1,69 @@
-import axios from "axios";
-import { getConfig } from "../config";
-import { extractErrorMessage } from "../components/Utilities/UtilFuncs";
+import { getAxiosInstance } from "../components/Utilities/AxiosUtils/AxiosInstance";
+import { apiRequest } from "../components/Utilities/UtilFuncs";
 
-export const fetchRegions = async () => {
-  const config = getConfig();
-  try {
+export const fetchRegions = () => {
+  const axios = getAxiosInstance();
+  return apiRequest(async () => {
     const [statesRes, zonesRes] = await Promise.all([
-      axios.get(`${config.API_BASE_URL}/state/`),
-      axios.get(`${config.API_BASE_URL}/zone/`),
+      axios.get(`state/`),
+      axios.get(`zone/`),
     ]);
-
     return statesRes.data.map((state) => ({
       ...state,
       zones: zonesRes.data.filter((zone) => zone.state_id === state.id),
     }));
-  } catch (error) {
-    return {
-      success: false,
-      error: extractErrorMessage(error, "Failed to fetch school details"),
-      details: error.message,
-    };
-  }
+  }, "Failed to fetch regions");
 };
 
-export const fetchResponsibleUsers = async (level, id) => {
-  const config = getConfig();
-  try {
-    const response = await axios.get(
-      `${config.API_BASE_URL}/userRolesByHeirarchy/`,
-      {
-        params: {
-          level_name: level.toUpperCase(),
-          level_id: id,
-        },
-      }
-    );
+export const fetchResponsibleUsers = (level, id) => {
+  const axios = getAxiosInstance();
+  return apiRequest(async () => {
+    const response = await axios.get(`userRolesByHeirarchy/`, {
+      params: {
+        level_name: level.toUpperCase(),
+        level_id: id,
+      },
+    });
     return response.data;
-  } catch (error) {
-    return {
-      success: false,
-      error: extractErrorMessage(error, "Failed to fetch school details"),
-      details: error.message,
-    };
-  }
+  }, "Failed to fetch responsible users");
 };
 
-export const fetchDistricts = async (zoneId) => {
-  const config = getConfig();
-  try {
-    const response = await axios.get(`${config.API_BASE_URL}/district/`);
+export const fetchDistricts = (zoneId) => {
+  const axios = getAxiosInstance();
+  return apiRequest(async () => {
+    const response = await axios.get(`district/`);
     return response.data.filter((d) => d.zone_id === zoneId);
-  } catch (error) {
-    return {
-      success: false,
-      error: extractErrorMessage(error, "Failed to fetch school details"),
-      details: error.message,
-    };
-  }
+  }, "Failed to fetch districts");
 };
 
-export const fetchBlocks = async (districtId) => {
-  const config = getConfig();
-  try {
-    const response = await axios.get(`${config.API_BASE_URL}/block/`);
+export const fetchBlocks = (districtId) => {
+  const axios = getAxiosInstance();
+  return apiRequest(async () => {
+    const response = await axios.get(`block/`);
     return response.data.filter((b) => b.district_id === districtId);
-  } catch (error) {
-    return {
-      success: false,
-      error: extractErrorMessage(error, "Failed to fetch school details"),
-      details: error.message,
-    };
-  }
+  }, "Failed to fetch blocks");
 };
 
-export const deleteRegion = async (level, id) => {
-  const config = getConfig();
-  try {
-    await axios.delete(`${config.API_BASE_URL}/${level}/${id}`);
-  } catch (error) {
-    throw new Error(`Failed to delete ${level}`, error);
-  }
+export const deleteRegion = (level, id) => {
+  const axios = getAxiosInstance();
+  return apiRequest(async () => {
+    await axios.delete(`${level}/${id}`);
+    return null;
+  }, `Failed to delete ${level}`);
 };
 
-export const addRegion = async (level, data) => {
-  const config = getConfig();
-  try {
-    const response = await axios.post(`${config.API_BASE_URL}/${level}/`, data);
+export const addRegion = (level, data) => {
+  const axios = getAxiosInstance();
+  return apiRequest(async () => {
+    const response = await axios.post(`${level}/`, data);
     return response.data;
-  } catch (error) {
-    throw new Error(`Failed to add ${level}`, error);
-  }
+  }, `Failed to add ${level}`);
 };
 
-export const updateRegion = async (level, id, data) => {
-  const config = getConfig();
-  try {
-    await axios.put(`${config.API_BASE_URL}/${level}/${id}`, data);
-  } catch (error) {
-    throw new Error(`Failed to update ${level}`, error);
-  }
+export const updateRegion = (level, id, data) => {
+  const axios = getAxiosInstance();
+  return apiRequest(async () => {
+    await axios.put(`${level}/${id}`, data);
+    return null;
+  }, `Failed to update ${level}`);
 };

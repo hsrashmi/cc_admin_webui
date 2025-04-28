@@ -25,7 +25,6 @@ import {
   EditTwoTone,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
-import { extractErrorMessage } from "../Utilities/UtilFuncs";
 import SnackbarUI from "../Utilities/SnackbarUI";
 import AddRegionDialog from "./AddRegion";
 import {
@@ -76,90 +75,93 @@ export default function RegionManagement() {
   useEffect(() => {
     const loadRegions = async () => {
       setIsLoading(true);
-      try {
-        const regions = await fetchRegions();
-        setRegions(regions);
-
-        if (regions.length > 0) {
-          const firstState = regions[0];
-          setSelectedRegion({
-            level: "state",
-            id: firstState.id,
-            name: firstState.name,
-          });
-          loadResponsibleUsers("state", firstState.id);
-        }
-
-        setIsLoading(false);
-      } catch (error) {
+      const regionResponse = await fetchRegions();
+      if (!regionResponse.success) {
         setSnackbar({
           open: true,
-          message: extractErrorMessage(error, "Failed to load data!"),
+          message: regionResponse.error,
           severity: "error",
         });
         setIsLoading(false);
+        return;
       }
+      const regions = regionResponse.data;
+      setRegions(regions);
+
+      if (regions.length > 0) {
+        const firstState = regions[0];
+        setSelectedRegion({
+          level: "state",
+          id: firstState.id,
+          name: firstState.name,
+        });
+        loadResponsibleUsers("state", firstState.id);
+      }
+      setIsLoading(false);
     };
     loadRegions();
   }, []);
 
   const loadResponsibleUsers = async (level, id) => {
     setIsUsersLoading(true);
-    try {
-      const users = await fetchResponsibleUsers(level, id);
-      setResponsibleUsers(users);
-    } catch (error) {
+
+    const users = await fetchResponsibleUsers(level, id);
+    if (!users.success) {
       setSnackbar({
         open: true,
-        message: extractErrorMessage(error, "Could not load responsible users"),
+        message: users.error,
         severity: "error",
       });
-    } finally {
       setIsUsersLoading(false);
+      return;
     }
+    setResponsibleUsers(users.data);
+    setIsUsersLoading(false);
   };
 
   const loadDistricts = async (zoneId) => {
-    try {
-      const districts = await fetchDistricts(zoneId);
-      setRegions((prev) =>
-        prev.map((state) => ({
-          ...state,
-          zones: state.zones.map((zone) =>
-            zone.id === zoneId ? { ...zone, districts } : zone
-          ),
-        }))
-      );
-    } catch (error) {
+    const districtResponse = await fetchDistricts(zoneId);
+    if (!districtResponse.success) {
       setSnackbar({
         open: true,
-        message: extractErrorMessage(error, "Failed to fetch districts"),
+        message: districts.error,
         severity: "error",
       });
+      return;
     }
+    const { data: districts } = districtResponse;
+    setRegions((prev) =>
+      prev.map((state) => ({
+        ...state,
+        zones: state.zones.map((zone) =>
+          zone.id === zoneId ? { ...zone, districts } : zone
+        ),
+      }))
+    );
   };
 
   const loadBlocks = async (districtId) => {
-    try {
-      const blocks = await fetchBlocks(districtId);
-      setRegions((prev) =>
-        prev.map((state) => ({
-          ...state,
-          zones: state.zones.map((zone) => ({
-            ...zone,
-            districts: zone.districts?.map((d) =>
-              d.id === districtId ? { ...d, blocks } : d
-            ),
-          })),
-        }))
-      );
-    } catch (error) {
+    const blockResponse = await fetchBlocks(districtId);
+    if (!blockResponse.success) {
       setSnackbar({
         open: true,
-        message: extractErrorMessage(error, "Failed to fetch blocks"),
+        message: blockResponse.error,
         severity: "error",
       });
+      return;
     }
+    const { data: blocks } = blockResponse;
+    setRegions((prev) =>
+      prev.map((state) => ({
+        ...state,
+        zones: state.zones.map((zone) => ({
+          ...zone,
+          districts: zone.districts?.map((d) =>
+            d.id === districtId ? { ...d, blocks: blocks } : d
+          ),
+        })),
+      }))
+    );
   };
 
   const toggleExpand = async (id, level) => {
@@ -193,118 +195,119 @@ export default function RegionManagement() {
   };
 
   const handleDelete = async () => {
-    try {
-      await deleteRegion(confirmDelete.level, confirmDelete.id);
-      setRegions((prevRegions) => {
-        const { level, id } = confirmDelete;
-
-        const updateRegions = (regions) => {
-          return regions
-            .map((state) => {
-              if (level === "state" && state.id === id) {
-                return null;
-              }
-
-              const updatedZones = state.zones
-                ?.map((zone) => {
-                  if (level === "zone" && zone.id === id) return null;
-
-                  const updatedDistricts = zone.districts
-                    ?.map((district) => {
-                      if (level === "district" && district.id === id)
-                        return null;
-
-                      const updatedBlocks = district.blocks?.filter(
-                        (block) => !(level === "block" && block.id === id)
-                      );
-
-                      return {
-                        ...district,
-                        blocks: updatedBlocks,
-                      };
-                    })
-                    .filter(Boolean);
-
-                  return {
-                    ...zone,
-                    districts: updatedDistricts,
-                  };
-                })
-                .filter(Boolean);
-
-              return {
-                ...state,
-                zones: updatedZones,
-              };
-            })
-            .filter(Boolean);
-        };
-
-        return updateRegions(prevRegions);
-      });
-
-      setConfirmDelete({ open: false, id: null, level: "" });
-
+    const deleteRegionRes = await deleteRegion(
+      confirmDelete.level,
+      confirmDelete.id
+    );
+    if (!deleteRegionRes.success) {
       setSnackbar({
         open: true,
-        message: "Region deleted successfully!",
-        severity: "success",
-      });
-    } catch (error) {
-      console.error("Error deleting region:", error);
-      setSnackbar({
-        open: true,
-        message: extractErrorMessage(error, "Failed to delete region!"),
+        message: deleteRegionRes.error,
         severity: "error",
       });
+      return;
     }
+    setRegions((prevRegions) => {
+      const { level, id } = confirmDelete;
+
+      const updateRegions = (regions) => {
+        return regions
+          .map((state) => {
+            if (level === "state" && state.id === id) {
+              return null;
+            }
+
+            const updatedZones = state.zones
+              ?.map((zone) => {
+                if (level === "zone" && zone.id === id) return null;
+
+                const updatedDistricts = zone.districts
+                  ?.map((district) => {
+                    if (level === "district" && district.id === id) return null;
+
+                    const updatedBlocks = district.blocks?.filter(
+                      (block) => !(level === "block" && block.id === id)
+                    );
+
+                    return {
+                      ...district,
+                      blocks: updatedBlocks,
+                    };
+                  })
+                  .filter(Boolean);
+
+                return {
+                  ...zone,
+                  districts: updatedDistricts,
+                };
+              })
+              .filter(Boolean);
+
+            return {
+              ...state,
+              zones: updatedZones,
+            };
+          })
+          .filter(Boolean);
+      };
+
+      return updateRegions(prevRegions);
+    });
+
+    setConfirmDelete({ open: false, id: null, level: "" });
+
+    setSnackbar({
+      open: true,
+      message: "Region deleted successfully!",
+      severity: "success",
+    });
   };
 
   const handleAddRegion = async (level, parentId, name, description) => {
-    try {
-      const newRegion = await addRegion(level.toLowerCase(), {
-        name,
-        description,
-        [`${getParentKey(level)}`]: parentId,
-      });
-      setRegions((prev) => updateRegionState(prev, level, newRegion));
+    const newRegionResponse = await addRegion(level.toLowerCase(), {
+      name,
+      description,
+      [`${getParentKey(level)}`]: parentId,
+    });
+    if (!newRegionResponse.success) {
       setSnackbar({
         open: true,
-        message: `${level} added successfully!`,
-        severity: "success",
-      });
-    } catch (error) {
-      setSnackbar({
-        open: true,
-        message: extractErrorMessage(error, `Failed to add ${level}`),
+        message: newRegionResponse.error,
         severity: "error",
       });
+      return;
     }
+    setRegions((prev) =>
+      updateRegionState(prev, level, newRegionResponse.data)
+    );
+    setSnackbar({
+      open: true,
+      message: `${level} added successfully!`,
+      severity: "success",
+    });
   };
 
   const handleEditRegion = async (level, id, name, description) => {
-    try {
-      await updateRegion(level.toLowerCase(), id, { name, description });
-      setRegions((prev) =>
-        updateRegionState(
-          prev,
-          level,
-          { ...{ name, description }, id: id },
-          true
-        )
-      );
+    const updateRegionRes = await updateRegion(level.toLowerCase(), id, {
+      name,
+      description,
+    });
+    if (!updateRegionRes.success) {
       setSnackbar({
         open: true,
-        message: `${level} updated successfully!`,
-        severity: "success",
-      });
-    } catch (error) {
-      setSnackbar({
-        open: true,
-        message: extractErrorMessage(error, `Failed to update ${level}`),
+        message: updateRegionRes.error,
         severity: "error",
       });
+      return;
     }
+    setRegions((prev) =>
+      updateRegionState(prev, level, { ...{ name, description }, id: id }, true)
+    );
+    setSnackbar({
+      open: true,
+      message: `${level} updated successfully!`,
+      severity: "success",
+    });
   };
 
   const updateRegionState = (regions, level, regionData, isEdit = false) => {
